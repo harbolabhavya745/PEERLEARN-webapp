@@ -1,0 +1,20 @@
+{
+  "name": "peerlearn",
+  "version": "1.0.0",
+  "description": "PeerLearn – Student academic & skill growth platform",
+  "private": true,
+  "scripts": {
+    "dev": "echo 'Use vercel dev directly in the terminal'",
+    "build": "echo 'No build step needed'"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.20.0",
+    "@supabase/supabase-js": "^2.43.0",
+    "next.js": "^1.0.3",
+    "razorpay": "^2.9.2",
+    "supabase": "^2.98.2"
+  },
+  "engines": {
+    "node": ">=18.x"
+  }
+}
