@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   email         TEXT UNIQUE NOT NULL,
   college       TEXT,
   course        TEXT,
+  graduation_year TEXT,
   bio           TEXT,
   skills        TEXT[],              -- e.g. ARRAY['Python','DSA','Calculus']
   avatar_skin   TEXT DEFAULT '🧑‍💻',  -- emoji or skin key

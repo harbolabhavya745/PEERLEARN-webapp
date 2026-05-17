@@ -1264,6 +1264,15 @@ function updateUIWithUserData() {
       profAva.innerHTML = `<img src="${currentUser.avatar_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
     } else {
       profAva.textContent = currentUser.avatar_skin || '👤';
+      // If we have a skin color, we should ideally restore the gradient background here too
+    }
+    // Apply saved frame border color
+    if (currentUser.avatar_frame) {
+      profAva.style.border = `3px solid ${currentUser.avatar_frame}`;
+      profAva.dataset.frame = currentUser.avatar_frame; // Sync dataset
+    }
+    if (currentUser.avatar_skin) {
+      profAva.dataset.emoji = currentUser.avatar_skin; // Sync dataset
     }
   }
 
@@ -1317,12 +1326,22 @@ async function saveProfileChanges() {
   const skillsInput = document.getElementById('edit-skills').value;
   const skills = skillsInput ? skillsInput.split(',').map(s => s.trim()).filter(s => s !== '') : [];
   
+  const mainAva = document.getElementById('main-avatar');
+  const avatar_skin = mainAva.dataset.emoji || currentUser.avatar_skin;
+  const avatar_frame = mainAva.dataset.frame || currentUser.avatar_frame;
+
   const btn = document.getElementById('save-profile-btn');
   const originalHtml = btn.innerHTML;
   btn.innerHTML = '<i class="ti ti-loader spin"></i> Saving...';
   
   try {
-    await apiCall('/api/auth/me', 'PATCH', { bio, graduation_year: year, skills });
+    await apiCall('/api/auth/me', 'PATCH', { 
+      bio, 
+      graduation_year: year, 
+      skills,
+      avatar_skin,
+      avatar_frame
+    });
     alert('Profile updated!');
     await loadInitialData();
   } catch (err) {
@@ -1417,13 +1436,18 @@ function selectSkin(el,emoji,color,name){
   document.querySelectorAll('.skin-item').forEach(s=>s.classList.remove('selected'));
   el.classList.add('selected');
   const a=document.getElementById('main-avatar');
-  a.textContent=emoji;a.style.background=`linear-gradient(135deg,${color}88,${color}44)`;a.style.fontSize='28px';
+  a.textContent=emoji;
+  a.dataset.emoji = emoji; // Store for saving
+  a.style.background=`linear-gradient(135deg,${color}88,${color}44)`;
+  a.style.fontSize='28px';
   document.querySelector('.nav-avatar').textContent=emoji;
 }
 function selectFrame(el,color,extra){
   document.querySelectorAll('.frame-item').forEach(f=>f.classList.remove('selected'));
   el.classList.add('selected');
-  document.getElementById('main-avatar').style.border=`3px solid ${color}`;
+  const mainAva = document.getElementById('main-avatar');
+  mainAva.style.border=`3px solid ${color}`;
+  mainAva.dataset.frame = color; // Store for saving
 }
 
 // ── QUIZ ENGINE ──
@@ -1919,6 +1943,19 @@ function renderSceneXP(){
             </div>`).join('')}
         </div>
       </div>
+      <div style="display:flex;gap:6px">
+        ${[['🥇 #1','Leaderboard','#d97706'],['🎓 Verified','Expert','#7c3aed'],['⚡ Hot','Streak','#059669']].map(([title,sub,c],i)=>`
+          <div style="flex:1;background:#fff;border:1.5px solid ${c}22;border-radius:8px;padding:8px;text-align:center;animation:slideUp .4s ease ${i*0.15+0.8}s both;opacity:0">
+            <div style="font-size:12px;font-weight:700;color:${c}">${title}</div>
+            <div style="font-size:9px;color:#9d97c8">${sub}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>
+ </div>
       <div style="display:flex;gap:6px">
         ${[['🥇 #1','Leaderboard','#d97706'],['🎓 Verified','Expert','#7c3aed'],['⚡ Hot','Streak','#059669']].map(([title,sub,c],i)=>`
           <div style="flex:1;background:#fff;border:1.5px solid ${c}22;border-radius:8px;padding:8px;text-align:center;animation:slideUp .4s ease ${i*0.15+0.8}s both;opacity:0">

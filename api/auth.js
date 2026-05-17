@@ -156,7 +156,7 @@ export default async function handler(req, res) {
     const ok = await requireAuth(req, res);
     if (!ok) return;
 
-    const { full_name, bio, graduation_year, skills, avatar_skin } = req.body;
+    const { full_name, bio, graduation_year, skills, avatar_skin, avatar_frame } = req.body;
     
     const updates = {};
     if (full_name !== undefined) updates.full_name = full_name;
@@ -164,6 +164,7 @@ export default async function handler(req, res) {
     if (graduation_year !== undefined) updates.graduation_year = graduation_year;
     if (skills !== undefined) updates.skills = skills;
     if (avatar_skin !== undefined) updates.avatar_skin = avatar_skin;
+    if (avatar_frame !== undefined) updates.avatar_frame = avatar_frame;
 
     const { data, error } = await supabaseAdmin
       .from('profiles')
