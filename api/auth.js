@@ -151,5 +151,30 @@ export default async function handler(req, res) {
     });
   }
 
+  // ── PATCH /api/auth/me → update profile ──────────────────────────
+  if (url === '/api/auth/me' && req.method === 'PATCH') {
+    const ok = await requireAuth(req, res);
+    if (!ok) return;
+
+    const { full_name, bio, graduation_year, skills, avatar_skin } = req.body;
+    
+    const updates = {};
+    if (full_name !== undefined) updates.full_name = full_name;
+    if (bio !== undefined) updates.bio = bio;
+    if (graduation_year !== undefined) updates.graduation_year = graduation_year;
+    if (skills !== undefined) updates.skills = skills;
+    if (avatar_skin !== undefined) updates.avatar_skin = avatar_skin;
+
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .update(updates)
+      .eq('id', req.user.id)
+      .select()
+      .single();
+
+    if (error) return json(res, 500, { error: error.message });
+    return json(res, 200, { message: 'Profile updated', profile: data });
+  }
+
   return json(res, 404, { error: 'Auth route not found' });
 }
