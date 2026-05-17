@@ -434,29 +434,29 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
       <div id="signup-extra" class="hidden">
         <div class="form-field">
           <label>Full Name</label>
-          <input type="text" placeholder="Arjun Sharma">
+          <input type="text" id="reg-name" placeholder="Arjun Sharma">
         </div>
         <div class="g2" style="gap:10px">
           <div class="form-field">
             <label>College / University</label>
-            <input type="text" placeholder="Delhi University">
+            <input type="text" id="reg-college" placeholder="Delhi University">
           </div>
           <div class="form-field">
             <label>Course / Major</label>
-            <input type="text" placeholder="B.Tech CSE">
+            <input type="text" id="reg-course" placeholder="B.Tech CSE">
           </div>
         </div>
       </div>
       <div class="form-field">
         <label>Email</label>
-        <input type="email" placeholder="arjun@college.edu">
+        <input type="email" id="auth-email" placeholder="arjun@college.edu">
       </div>
       <div class="form-field">
         <label>Password</label>
-        <input type="password" placeholder="••••••••">
+        <input type="password" id="auth-password" placeholder="••••••••">
         <span class="forgot">Forgot password?</span>
       </div>
-      <button class="btn btn-accent" style="width:100%;justify-content:center;padding:11px" onclick="enterApp()">
+      <button class="btn btn-accent" id="auth-submit-btn" style="width:100%;justify-content:center;padding:11px" onclick="handleAuth()">
         <i class="ti ti-arrow-right"></i> <span id="login-btn-txt">Sign In</span>
       </button>
       <button class="demo-link-btn" onclick="openDemoModal()">
@@ -504,10 +504,10 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
     <div id="p-home" class="page active" style="padding:24px">
       <div class="hero-strip">
         <div class="flex aic gap16">
-          <div class="hero-ava">A</div>
+          <div class="hero-ava nav-avatar">A</div>
           <div>
-            <h2 style="margin-bottom:4px">Good evening, Arjun 👋</h2>
-            <p style="color:var(--text2)">You're on a <strong style="color:var(--green)">5-day streak</strong> — keep going!</p>
+            <h2 style="margin-bottom:4px" id="welcome-name">Good evening 👋</h2>
+            <p style="color:var(--text2)">You're on a <strong style="color:var(--green)" id="streak-label">0-day streak</strong> — keep going!</p>
           </div>
         </div>
         <div class="flex gap8">
@@ -517,55 +517,36 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
       </div>
 
       <div class="stat-row">
-        <div class="stat-card"><span class="stat-num" style="color:var(--green)">47</span><div class="stat-lbl">Quizzes Done</div></div>
-        <div class="stat-card"><span class="stat-num" style="color:var(--cyan)">12</span><div class="stat-lbl">Connections</div></div>
-        <div class="stat-card"><span class="stat-num" style="color:var(--purple)">1,240</span><div class="stat-lbl">XP Earned</div></div>
-        <div class="stat-card"><span class="stat-num" style="color:var(--gold)">🔥 5</span><div class="stat-lbl">Day Streak</div></div>
+        <div class="stat-card"><span class="stat-num" style="color:var(--green)" id="stat-quizzes">0</span><div class="stat-lbl">Quizzes Done</div></div>
+        <div class="stat-card"><span class="stat-num" style="color:var(--cyan)" id="stat-connections">0</span><div class="stat-lbl">Connections</div></div>
+        <div class="stat-card"><span class="stat-num" style="color:var(--purple)" id="stat-xp">0</span><div class="stat-lbl">XP Earned</div></div>
+        <div class="stat-card"><span class="stat-num" style="color:var(--gold)" id="stat-streak">🔥 0</span><div class="stat-lbl">Day Streak</div></div>
       </div>
 
       <div class="g2 mb20">
         <div class="card">
           <h3 class="mb12">Recent Activity</h3>
-          <div class="feed-item">
-            <div class="feed-ava a1">R</div>
-            <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Riya solved your doubt <span class="badge bg" style="font-size:10px">Calculus</span></div><div style="font-size:11px;color:var(--text3);margin-top:2px">2 minutes ago</div></div>
-          </div>
-          <div class="feed-item">
-            <div class="feed-ava a2">K</div>
-            <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Kabir invited you to a study room</div><div style="font-size:11px;color:var(--text3);margin-top:2px">18 minutes ago</div></div>
-          </div>
-          <div class="feed-item">
-            <div class="feed-ava a3">S</div>
-            <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Sneha scored higher in Physics Quiz 🎉</div><div style="font-size:11px;color:var(--text3);margin-top:2px">1 hour ago</div></div>
-          </div>
-          <div class="feed-item">
-            <div class="feed-ava a4">M</div>
-            <div style="flex:1"><div style="font-size:13px;font-weight:500;color:var(--text)">Mohit posted a note: <em>OS Ch. 5 Summary</em></div><div style="font-size:11px;color:var(--text3);margin-top:2px">3 hours ago</div></div>
+          <div id="activity-feed">
+            <div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">
+              No activity yet. Start a quiz or connect with peers!
+            </div>
           </div>
         </div>
         <div>
           <div class="card mb16" style="margin-bottom:14px">
             <h3 class="mb8">Trending Topics</h3>
-            <div>
+            <div id="trending-topics">
               <span class="trending-tag">#DataStructures</span>
               <span class="trending-tag">#DBMS</span>
               <span class="trending-tag">#Calculus</span>
-              <span class="trending-tag">#MachineLearning</span>
               <span class="trending-tag">#OOP</span>
-              <span class="trending-tag">#Thermodynamics</span>
-              <span class="trending-tag">#LinAlgebra</span>
             </div>
           </div>
           <div class="card">
             <h3 class="mb12">Suggested Peers</h3>
-            <div class="flex fc gap8">
-              <div class="flex aic jb">
-                <div class="flex aic gap8"><div class="feed-ava a1" style="width:32px;height:32px;font-size:12px">R</div><div><div style="font-size:13px;font-weight:600;color:var(--text)">Riya Patel</div><div style="font-size:11px;color:var(--text3)">B.Tech CSE · Algorithms</div></div></div>
-                <button class="btn btn-ghost btn-sm">Connect</button>
-              </div>
-              <div class="flex aic jb">
-                <div class="flex aic gap8"><div class="feed-ava a2" style="width:32px;height:32px;font-size:12px">K</div><div><div style="font-size:13px;font-weight:600;color:var(--text)">Kabir Singh</div><div style="font-size:11px;color:var(--text3)">B.Tech ECE · Physics</div></div></div>
-                <button class="btn btn-ghost btn-sm">Connect</button>
+            <div class="flex fc gap8" id="suggested-peers">
+              <div style="padding:10px;text-align:center;color:var(--text3);font-size:12px">
+                Finding peers in your course...
               </div>
             </div>
           </div>
@@ -586,34 +567,57 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
               </div>
               <div class="flex aic jb mb12">
                 <div>
-                  <h2 style="margin-bottom:2px">Arjun Sharma</h2>
-                  <p style="font-size:12px;color:var(--text2)">B.Tech Computer Science · Delhi University<span class="online-dot"></span></p>
+                  <h2 style="margin-bottom:2px" id="profile-full-name">Loading...</h2>
+                  <p style="font-size:12px;color:var(--text2)" id="profile-sub-details">Student<span class="online-dot"></span></p>
                 </div>
                 <button class="btn btn-ghost btn-sm"><i class="ti ti-pencil"></i> Edit Profile</button>
               </div>
-              <div class="flex gap8 mb12">
-                <span class="badge bg"><i class="ti ti-code"></i> Python</span>
-                <span class="badge bc"><i class="ti ti-math"></i> Calculus</span>
-                <span class="badge bp"><i class="ti ti-database"></i> DBMS</span>
+              <div class="flex gap8 mb12" id="profile-skills-badges">
+                <!-- Skills will be injected here -->
               </div>
               <div style="margin-bottom:12px">
-                <div class="flex jb mb4"><span style="font-size:12px;color:var(--text2)">Level 8 · Apprentice Scholar</span><span style="font-size:12px;color:var(--text2)">1240 / 2000 XP</span></div>
-                <div class="xp-bar"><div class="xp-fill" style="width:62%"></div></div>
+                <div class="flex jb mb4">
+                  <span style="font-size:12px;color:var(--text2)" id="profile-level-label">Level 1</span>
+                  <span style="font-size:12px;color:var(--text2)" id="profile-xp-label">0 / 200 XP</span>
+                </div>
+                <div class="xp-bar"><div class="xp-fill" style="width:0%"></div></div>
               </div>
               <div class="g2" style="gap:8px">
-                <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;font-family:'Fredoka',sans-serif;color:var(--green)">47</div><div style="font-size:11px;color:var(--text3)">Quizzes</div></div>
-                <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;font-family:'Fredoka',sans-serif;color:var(--cyan)">12</div><div style="font-size:11px;color:var(--text3)">Connections</div></div>
+                <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center">
+                  <div style="font-size:18px;font-weight:700;font-family:'Fredoka',sans-serif;color:var(--green)" id="profile-stat-quizzes">0</div>
+                  <div style="font-size:11px;color:var(--text3)">Quizzes</div>
+                </div>
+                <div style="background:var(--bg3);border-radius:var(--rs);padding:10px;text-align:center">
+                  <div style="font-size:18px;font-weight:700;font-family:'Fredoka',sans-serif;color:var(--cyan)" id="profile-stat-connections">0</div>
+                  <div style="font-size:11px;color:var(--text3)">Connections</div>
+                </div>
               </div>
             </div>
           </div>
           <div class="card">
             <h3 class="mb12">Edit Info</h3>
-            <div class="form-field"><label>Bio</label><textarea rows="2" placeholder="Tell peers what you're good at...">Passionate about algorithms and competitive programming. Happy to help with DSA and Python!</textarea></div>
-            <div class="g2" style="gap:10px">
-              <div class="form-field"><label>Year</label><select><option>1st Year</option><option selected>2nd Year</option><option>3rd Year</option><option>4th Year</option></select></div>
-              <div class="form-field"><label>Skills</label><input value="Python, DSA, DBMS"></div>
+            <div class="form-field">
+              <label>Bio</label>
+              <textarea rows="2" id="edit-bio" placeholder="Tell peers what you're good at..."></textarea>
             </div>
-            <button class="btn btn-green btn-sm"><i class="ti ti-check"></i> Save Changes</button>
+            <div class="g2" style="gap:10px">
+              <div class="form-field">
+                <label>Year</label>
+                <select id="edit-year">
+                  <option value="1">1st Year</option>
+                  <option value="2">2nd Year</option>
+                  <option value="3">3rd Year</option>
+                  <option value="4">4th Year</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label>Skills</label>
+                <input id="edit-skills" placeholder="e.g. Python, React, Design">
+              </div>
+            </div>
+            <button class="btn btn-green btn-sm" id="save-profile-btn" onclick="saveProfileChanges()">
+              <i class="ti ti-check"></i> Save Changes
+            </button>
           </div>
         </div>
         <div>
@@ -995,6 +999,387 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
 </div>
 
 <script>
+// ── CORE STATE & API ──
+let currentUser = null;
+let currentToken = localStorage.getItem('peerlearn_token');
+let isLoggingIn = false;
+
+/**
+ * Generic API helper to talk to our backend.
+ * Automatically adds the Auth token if we have one.
+ */
+async function apiCall(endpoint, method = 'GET', body = null) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
+
+  const options = { method, headers };
+  if (body) options.body = JSON.stringify(body);
+
+  try {
+    const res = await fetch(endpoint, options);
+    const contentType = res.headers.get('content-type');
+
+    // If we get HTML, the server likely crashed or the route wasn't found
+    if (contentType && contentType.includes('text/html')) {
+      console.error('Expected JSON but got HTML. Status:', res.status);
+      throw new Error(`Server error (Status ${res.status}). Try restarting "vercel dev".`);
+    }
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong');
+    return data;
+  } catch (err) {
+    console.error(`API Error [${endpoint}]:`, err);
+    throw err;
+  }
+}
+
+// ── AUTHENTICATION ──
+
+let authTab = 'login';
+function switchLoginTab(t){
+  authTab = t;
+  console.log('Switching to:', t);
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  document.getElementById('signup-extra').classList.toggle('hidden',t==='login');
+  
+  const btnTxt = document.getElementById('login-btn-txt');
+  if (btnTxt) {
+    btnTxt.textContent = t === 'login' ? 'Sign In' : 'Create Account';
+  }
+}
+
+async function handleAuth() {
+  if (isLoggingIn) return;
+
+  const email = document.getElementById('auth-email').value;
+  const password = document.getElementById('auth-password').value;
+  const btn = document.getElementById('auth-submit-btn');
+
+  if (!email || !password) return alert('Please fill in all fields');
+
+  try {
+    isLoggingIn = true;
+    btn.style.opacity = '0.7';
+    btn.innerHTML = '<i class="ti ti-loader spin"></i> Processing...';
+
+    if (authTab === 'login') {
+      const data = await apiCall('/api/auth/login', 'POST', { email, password });
+      currentToken = data.access_token;
+      localStorage.setItem('peerlearn_token', currentToken);
+      await loadInitialData();
+      enterApp();
+    } else {
+      const full_name = document.getElementById('reg-name').value;
+      const college = document.getElementById('reg-college').value;
+      const course = document.getElementById('reg-course').value;
+
+      if (!full_name) throw new Error('Full name is required');
+
+      const data = await apiCall('/api/auth/signup', 'POST', {
+        email, password, full_name, college, course
+      });
+      alert(data.message);
+      switchLoginTab('login');
+    }
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    isLoggingIn = false;
+    btn.style.opacity = '1';
+    btn.innerHTML = `<i class="ti ti-arrow-right"></i> <span id="login-btn-txt">${authTab === 'login' ? 'Sign In' : 'Create Account'}</span>`;
+  }
+}
+async function loadInitialData() {
+  try {
+    const data = await apiCall('/api/auth/me');
+    currentUser = data.profile;
+    updateUIWithUserData();
+    loadDashboardData();
+    loadSuggestedPeers();
+    loadSkins();
+    loadConversations();
+  } catch (err) {
+    console.error('Failed to load user data:', err);
+    logout();
+  }
+}
+
+async function loadSkins() {
+  try {
+    const data = await apiCall('/api/skins');
+    const container = document.getElementById('skin-grid');
+
+    if (data.skins) {
+      container.innerHTML = data.skins.map(skin => {
+        const isOwned = data.owned_keys.includes(skin.key);
+        const isSelected = currentUser.avatar_skin === skin.emoji;
+
+        return `
+          <div class="skin-item ${isSelected ? 'selected' : ''} ${!isOwned ? 'skin-locked' : ''}" 
+               onclick="${isOwned ? `applySkin('${skin.emoji}', '${skin.key}')` : `unlockSkin('${skin.key}', ${skin.price_xp})`}">
+            <div class="skin-ava" style="background:rgba(99,102,241,.12)">${skin.emoji}</div>
+            <div class="skin-name">${skin.name} ${!isOwned ? `(🔒 ${skin.price_xp} XP)` : ''}</div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (err) {
+    console.error('Failed to load skins:', err);
+  }
+}
+
+async function applySkin(emoji, key) {
+  try {
+    await apiCall('/api/auth/me', 'PATCH', { avatar_skin: emoji });
+    currentUser.avatar_skin = emoji;
+    updateUIWithUserData();
+    loadSkins();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function unlockSkin(key, price) {
+  if (currentUser.xp < price) return alert(`You need ${price} XP to unlock this skin!`);
+  if (!confirm(`Unlock this skin for ${price} XP?`)) return;
+
+  try {
+    await apiCall('/api/skins/unlock', 'POST', { skin_key: key });
+    loadInitialData(); // Refresh everything
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// ── NAVIGATION ──
+async function loadDashboardData() {
+  try {
+    const data = await apiCall('/api/dashboard');
+    
+    // Update Stat Cards
+    document.getElementById('stat-quizzes').textContent = data.stats.quizzes;
+    document.getElementById('stat-connections').textContent = data.stats.connections;
+    document.getElementById('stat-xp').textContent = data.stats.xp.toLocaleString();
+    document.getElementById('stat-streak').textContent = `🔥 ${data.stats.streak}`;
+    
+    // Update Profile Page Stats too
+    document.getElementById('profile-stat-quizzes').textContent = data.stats.quizzes;
+    document.getElementById('profile-stat-connections').textContent = data.stats.connections;
+
+    // Update Activity Feed
+    const feed = document.getElementById('activity-feed');
+    if (data.activities && data.activities.length > 0) {
+      feed.innerHTML = data.activities.map(act => `
+        <div class="feed-item">
+          <div class="feed-ava" style="background:var(--accent-light);color:var(--accent)">${act.actor_name?.[0] || 'P'}</div>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:500;color:var(--text)">
+              ${act.content}
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${new Date(act.created_at).toLocaleTimeString()}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    console.error('Failed to load dashboard:', err);
+  }
+}
+
+async function loadSuggestedPeers() {
+  try {
+    const data = await apiCall('/api/users/suggestions');
+    const container = document.getElementById('suggested-peers');
+    
+    if (data.suggestions && data.suggestions.length > 0) {
+      container.innerHTML = data.suggestions.map(peer => `
+        <div class="flex aic jb">
+          <div class="flex aic gap8">
+            <div class="feed-ava" style="width:32px;height:32px;font-size:12px;background:var(--bg3)">${peer.avatar_skin || peer.full_name[0]}</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--text)">${peer.full_name}</div>
+              <div style="font-size:11px;color:var(--text3)">${peer.course || ''} · ${peer.match_reason || ''}</div>
+            </div>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="followUser('${peer.id}')">Connect</button>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div style="font-size:11px;color:var(--text3);text-align:center">No suggestions found yet.</div>';
+    }
+  } catch (err) {
+    console.error('Failed to load suggestions:', err);
+  }
+}
+
+async function followUser(userId) {
+  try {
+    await apiCall('/api/follows', 'POST', { following_id: userId });
+    alert('Connected!');
+    loadDashboardData();
+    loadSuggestedPeers();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function updateUIWithUserData() {
+  if (!currentUser) return;
+
+  // Update headers/sidebars
+  document.querySelectorAll('.nav-avatar').forEach(el => {
+    el.textContent = currentUser.avatar_skin || '👤';
+  });
+
+  // Update Dashboard
+  const welcomeEl = document.getElementById('welcome-name');
+  if (welcomeEl) welcomeEl.textContent = `Good evening, ${currentUser.full_name.split(' ')[0]} 👋`;
+
+  const streakLabel = document.getElementById('streak-label');
+  if (streakLabel) streakLabel.textContent = `${currentUser.streak || 0}-day streak`;
+
+  const xpBadge = document.querySelector('.topbar-right .badge.bg');
+  if (xpBadge) xpBadge.innerHTML = `<i class="ti ti-bolt"></i> ${currentUser.xp || 0} XP`;
+
+  const planBadge = document.querySelector('.topbar-right .badge.bo');
+  if (planBadge) {
+    const plan = currentUser.plan || 'free';
+    planBadge.innerHTML = `<i class="ti ti-crown"></i> ${plan.charAt(0).toUpperCase() + plan.slice(1)}`;
+  }
+
+  // Update Profile Page
+  const profName = document.getElementById('profile-full-name');
+  if (profName) profName.textContent = currentUser.full_name;
+
+  const profDetails = document.getElementById('profile-sub-details');
+  if (profDetails) {
+    profDetails.innerHTML = `${currentUser.course || ''} · ${currentUser.college || ''} <span class="online-dot"></span>`;
+  }
+
+  const profAva = document.getElementById('main-avatar');
+  if (profAva) {
+    if (currentUser.avatar_url) {
+      profAva.innerHTML = `<img src="${currentUser.avatar_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+    } else {
+      profAva.textContent = currentUser.avatar_skin || '👤';
+    }
+  }
+
+  // Update navbar/hero avatars too
+  document.querySelectorAll('.nav-avatar, .hero-ava').forEach(el => {
+    if (currentUser.avatar_url) {
+      el.innerHTML = `<img src="${currentUser.avatar_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
+    } else {
+      el.textContent = currentUser.avatar_skin || '👤';
+    }
+  });
+
+  // Update Edit Form
+  const bioInp = document.getElementById('edit-bio');
+  if (bioInp) bioInp.value = currentUser.bio || '';
+
+  const yearInp = document.getElementById('edit-year');
+  if (yearInp) yearInp.value = currentUser.graduation_year || '1';
+
+  const skillsInp = document.getElementById('edit-skills');
+  if (skillsInp) skillsInp.value = (currentUser.skills || []).join(', ');
+
+  // Update Level and XP
+  const levelLabel = document.getElementById('profile-level-label');
+  if (levelLabel) levelLabel.textContent = `Level ${currentUser.level || 1}`;
+
+  const xpLabel = document.getElementById('profile-xp-label');
+  if (xpLabel) {
+    const levelXP = (currentUser.level || 1) * 200; // Example level formula
+    xpLabel.textContent = `${currentUser.xp || 0} / ${levelXP} XP`;
+    
+    const xpFill = document.querySelector('.xp-fill');
+    if (xpFill) {
+      const progress = Math.min(((currentUser.xp || 0) / levelXP) * 100, 100);
+      xpFill.style.width = `${progress}%`;
+    }
+  }
+
+  // Update Skills
+  const skillsContainer = document.getElementById('profile-skills-badges');
+  if (skillsContainer && currentUser.skills) {
+    skillsContainer.innerHTML = currentUser.skills.map(s => `
+      <span class="badge bg">${s}</span>
+    `).join('');
+  }
+}
+
+async function saveProfileChanges() {
+  const bio = document.getElementById('edit-bio').value;
+  const year = document.getElementById('edit-year').value;
+  const skillsInput = document.getElementById('edit-skills').value;
+  const skills = skillsInput ? skillsInput.split(',').map(s => s.trim()).filter(s => s !== '') : [];
+  
+  const btn = document.getElementById('save-profile-btn');
+  const originalHtml = btn.innerHTML;
+  btn.innerHTML = '<i class="ti ti-loader spin"></i> Saving...';
+  
+  try {
+    await apiCall('/api/auth/me', 'PATCH', { bio, graduation_year: year, skills });
+    alert('Profile updated!');
+    await loadInitialData();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    btn.innerHTML = originalHtml;
+  }
+}
+
+function toggleEditProfile() {
+  const profilePage = document.getElementById('p-profile');
+  const editCard = profilePage.querySelector('.card:nth-child(2)');
+  if (editCard) editCard.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function handleAvatarUpload(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const avaWrap = document.getElementById('main-ava-wrap');
+  const originalHtml = avaWrap.innerHTML;
+  avaWrap.innerHTML = '<div class="ti ti-loader spin" style="font-size:32px"></div>';
+
+  try {
+    const res = await fetch('/api/upload/avatar', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${currentToken}` },
+      body: formData
+    });
+    
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Upload failed');
+    
+    alert('Avatar updated!');
+    await loadInitialData();
+  } catch (err) {
+    alert(err.message);
+    avaWrap.innerHTML = originalHtml;
+  }
+}
+
+function logout() {
+  localStorage.removeItem('peerlearn_token');
+  location.reload();
+}
+
+// Check for existing session on load
+window.addEventListener('DOMContentLoaded', async () => {
+  if (currentToken) {
+    await loadInitialData();
+    enterApp();
+  }
+});
+
 // ── NAVIGATION ──
 function enterApp(){
   document.getElementById('p-login').style.display='none';
@@ -1011,12 +1396,6 @@ function showPage(id,navEl){
 function setMobileNav(el){
   document.querySelectorAll('.mobile-nav-btn').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-}
-function switchLoginTab(t){
-  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
-  document.getElementById('tab-'+t).classList.add('active');
-  document.getElementById('signup-extra').classList.toggle('hidden',t==='login');
-  document.getElementById('login-btn-txt').textContent=t==='login'?'Sign In':'Create Account';
 }
 
 // ── DARK MODE ──
@@ -1048,80 +1427,204 @@ function selectFrame(el,color,extra){
 }
 
 // ── QUIZ ENGINE ──
-const quizData={
-  'Data Structures & Algorithms':[
-    {q:'What is the time complexity of binary search?',opts:['O(n)','O(log n)','O(n²)','O(1)'],ans:1,exp:'Binary search halves the search space each step — that\'s O(log n).'},
-    {q:'Which data structure uses LIFO order?',opts:['Queue','Heap','Stack','Linked List'],ans:2,exp:'Stack = Last In First Out. Think of a stack of plates.'},
-    {q:'What is the worst-case time complexity of QuickSort?',opts:['O(n log n)','O(n)','O(n²)','O(log n)'],ans:2,exp:'QuickSort degrades to O(n²) when the pivot is always the smallest or largest element.'},
-    {q:'Which traversal visits root first?',opts:['Inorder','Postorder','Preorder','BFS'],ans:2,exp:'Preorder = Root → Left → Right.'},
-    {q:'A hash table has average O(?) for lookups.',opts:['O(n)','O(log n)','O(1)','O(n²)'],ans:2,exp:'Hash tables use hashing to achieve constant-time average lookups.'},
-  ],
-  default:[
-    {q:'The process of converting source code to machine code is called?',opts:['Interpretation','Compilation','Linking','Assembly'],ans:1,exp:'Compilation translates the entire source into machine code before execution.'},
-    {q:'Which HTTP method is used to update a resource?',opts:['GET','POST','PUT','DELETE'],ans:2,exp:'PUT replaces the target resource with the request payload.'},
-    {q:'What does SQL stand for?',opts:['Structured Query Language','Simple Query Logic','Structured Question Language','Syntax Query List'],ans:0,exp:'SQL = Structured Query Language, used to manage relational databases.'},
-    {q:'Which of these is NOT a primary key property?',opts:['Unique','Non-null','Indexed','Encrypted'],ans:3,exp:'Primary keys must be unique and non-null; encryption is not a requirement.'},
-    {q:'RAM stands for?',opts:['Read Access Memory','Random Access Memory','Rapid Array Memory','Readable Application Memory'],ans:1,exp:'RAM = Random Access Memory — fast volatile memory used by running programs.'},
-  ]
-};
-let currentQ=0,score=0,questions=[],selectedTopic='';
-function startQuiz(topic){
-  selectedTopic=topic;questions=quizData[topic]||quizData.default;currentQ=0;score=0;
+let currentQuizId = null;
+let currentQuestions = [];
+let userAnswers = [];
+let quizTopic = '';
+
+async function startQuiz(topic) {
+  quizTopic = topic;
   document.getElementById('quiz-home').classList.add('hidden');
-  document.getElementById('quiz-result').classList.add('hidden');
   document.getElementById('quiz-active').classList.remove('hidden');
-  document.getElementById('quiz-topic-label').textContent=topic;
-  renderQuestion();
+  document.getElementById('quiz-topic-label').textContent = topic;
+  
+  document.getElementById('q-text').textContent = "AI is generating your quiz...";
+  document.getElementById('q-options').innerHTML = '<div class="ti ti-loader spin" style="font-size:24px;margin:20px auto;display:block"></div>';
+
+  try {
+    const data = await apiCall('/api/quiz', 'POST', { action: 'generate', topic });
+    currentQuizId = data.quiz_id;
+    currentQuestions = data.questions;
+    currentQ = 0;
+    score = 0;
+    userAnswers = [];
+    renderQuestion();
+  } catch (err) {
+    alert(err.message);
+    backToQuizHome();
+  }
 }
-function renderQuestion(){
-  const q=questions[currentQ];
-  document.getElementById('q-counter').textContent=`Q ${currentQ+1} / ${questions.length}`;
-  document.getElementById('q-fill').style.width=((currentQ+1)/questions.length*100)+'%';
-  document.getElementById('q-text').textContent=q.q;
+
+function renderQuestion() {
+  const q = currentQuestions[currentQ];
+  document.getElementById('q-counter').textContent = `Q ${currentQ + 1} / ${currentQuestions.length}`;
+  document.getElementById('q-fill').style.width = ((currentQ + 1) / currentQuestions.length * 100) + '%';
+  document.getElementById('q-text').textContent = q.question;
   document.getElementById('q-feedback').classList.add('hidden');
   document.getElementById('next-btn').classList.add('hidden');
-  const letters=['A','B','C','D'];
-  document.getElementById('q-options').innerHTML=q.opts.map((o,i)=>`
-    <button class="q-opt" onclick="answerQ(this,${i})">
+  
+  const letters = ['A', 'B', 'C', 'D'];
+  document.getElementById('q-options').innerHTML = q.options.map((o, i) => `
+    <button class="q-opt" onclick="answerQ(this, ${i})">
       <span class="opt-letter">${letters[i]}</span>${o}
     </button>`).join('');
 }
-function answerQ(el,idx){
-  document.querySelectorAll('.q-opt').forEach(b=>b.setAttribute('disabled',''));
-  const q=questions[currentQ];
-  const fb=document.getElementById('q-feedback');
-  if(idx===q.ans){score++;el.classList.add('correct');fb.className='q-feedback q-fb-correct';fb.innerHTML='<i class="ti ti-check"></i> Correct! '+q.exp;}
-  else{el.classList.add('wrong');document.querySelectorAll('.q-opt')[q.ans].classList.add('correct');fb.className='q-feedback q-fb-wrong';fb.innerHTML='<i class="ti ti-x"></i> Not quite. '+q.exp;}
+
+function answerQ(el, idx) {
+  const q = currentQuestions[currentQ];
+  userAnswers[currentQ] = q.options[idx];
+  
+  document.querySelectorAll('.q-opt').forEach(b => b.setAttribute('disabled', ''));
+  
+  const isCorrect = userAnswers[currentQ] === q.answer;
+  const fb = document.getElementById('q-feedback');
+  
+  if (isCorrect) {
+    score++;
+    el.classList.add('correct');
+    fb.className = 'q-feedback q-fb-correct';
+    fb.innerHTML = `<i class="ti ti-check"></i> Correct!`;
+  } else {
+    el.classList.add('wrong');
+    fb.className = 'q-feedback q-fb-wrong';
+    fb.innerHTML = `<i class="ti ti-x"></i> The correct answer was: ${q.answer}`;
+  }
+  
   fb.classList.remove('hidden');
   document.getElementById('next-btn').classList.remove('hidden');
+  
+  if (currentQ === currentQuestions.length - 1) {
+    document.getElementById('next-btn').textContent = "Finish & Submit";
+  } else {
+    document.getElementById('next-btn').textContent = "Next Question";
+  }
 }
-function nextQuestion(){currentQ++;if(currentQ>=questions.length){showResult();}else{renderQuestion();}}
-function showResult(){
-  document.getElementById('quiz-active').classList.add('hidden');
-  document.getElementById('quiz-result').classList.remove('hidden');
-  document.getElementById('result-score').textContent=score+'/'+questions.length;
+
+async function nextQuestion() {
+  currentQ++;
+  if (currentQ >= currentQuestions.length) {
+    submitQuiz();
+  } else {
+    renderQuestion();
+  }
 }
-function backToQuizHome(){
+
+async function submitQuiz() {
+  document.getElementById('quiz-active').innerHTML = '<div style="padding:40px;text-align:center"><div class="ti ti-loader spin" style="font-size:32px;margin-bottom:12px"></div><div>Submitting results...</div></div>';
+  
+  try {
+    const result = await apiCall('/api/quiz', 'POST', {
+      action: 'submit',
+      quiz_id: currentQuizId,
+      answers: userAnswers
+    });
+    
+    document.getElementById('quiz-active').classList.add('hidden');
+    document.getElementById('quiz-result').classList.remove('hidden');
+    document.getElementById('result-score').textContent = `${result.score}/${currentQuestions.length}`;
+    
+    const xpNotice = document.createElement('div');
+    xpNotice.style.color = 'var(--green)';
+    xpNotice.style.fontWeight = '700';
+    xpNotice.style.marginTop = '10px';
+    xpNotice.textContent = `+${result.xp_earned} XP Gained!`;
+    document.getElementById('quiz-result').appendChild(xpNotice);
+    
+    // Refresh user data to show new XP
+    loadInitialData();
+  } catch (err) {
+    alert(err.message);
+    backToQuizHome();
+  }
+}
+
+function backToQuizHome() {
   document.getElementById('quiz-active').classList.add('hidden');
   document.getElementById('quiz-result').classList.add('hidden');
   document.getElementById('quiz-home').classList.remove('hidden');
 }
 
 // ── CHAT ──
-function openChat(el,name,letter,bg,color){
-  document.querySelectorAll('.chat-item').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
-  const a=document.getElementById('ch-ava');
-  a.style.background=bg;a.style.color=color;a.textContent=letter;
-  document.getElementById('ch-name').textContent=name;
+let activeConversationId = null;
+
+async function loadConversations() {
+  try {
+    const data = await apiCall('/api/chat');
+    const list = document.getElementById('chat-list');
+    if (!list) return;
+    
+    if (data.conversations && data.conversations.length > 0) {
+      list.innerHTML = data.conversations.map(conv => {
+        const otherUser = conv.other_user || { full_name: 'Unknown', avatar_skin: '👤' };
+        const lastMsg = conv.last_message || { content: 'No messages yet', created_at: new Date() };
+        
+        return `
+          <div class="chat-item ${activeConversationId === conv.id ? 'active' : ''}" 
+               onclick="openConversation('${conv.id}', '${otherUser.full_name}', '${otherUser.avatar_skin || '👤'}')">
+            <div class="chat-ava" style="background:var(--bg3)">${otherUser.avatar_skin || otherUser.full_name[0]}</div>
+            <div style="flex:1;min-width:0">
+              <div class="chat-name">${otherUser.full_name}</div>
+              <div class="chat-preview">${lastMsg.content}</div>
+            </div>
+            <div class="chat-time">${new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
+        `;
+      }).join('');
+    } else {
+      list.innerHTML = '<div style="padding:20px;text-align:center;font-size:11px;color:var(--text3)">No conversations yet. Connect with peers to start chatting!</div>';
+    }
+  } catch (err) {
+    console.error('Failed to load chats:', err);
+  }
 }
-function sendMsg(){
-  const inp=document.getElementById('chat-input');
-  const txt=inp.value.trim();if(!txt)return;
-  const msgs=document.getElementById('chat-messages');
-  const div=document.createElement('div');div.className='msg mine';
-  div.innerHTML=`<div class="msg-bubble">${txt}</div><div class="msg-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</div>`;
-  msgs.appendChild(div);inp.value='';msgs.scrollTop=msgs.scrollHeight;
+
+async function openConversation(id, name, skin) {
+  activeConversationId = id;
+  document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+  
+  const headerAva = document.getElementById('ch-ava');
+  if (headerAva) headerAva.textContent = skin;
+  
+  const headerName = document.getElementById('ch-name');
+  if (headerName) headerName.textContent = name;
+  
+  const msgsContainer = document.getElementById('chat-messages');
+  if (!msgsContainer) return;
+  
+  msgsContainer.innerHTML = '<div class="ti ti-loader spin" style="font-size:24px;margin:40px auto;display:block"></div>';
+
+  try {
+    const data = await apiCall(`/api/chat?conversation_id=${id}`);
+    msgsContainer.innerHTML = (data.messages || []).map(m => `
+      <div class="msg ${m.sender_id === currentUser.id ? 'mine' : 'theirs'}">
+        <div class="msg-bubble">${m.content}</div>
+        <div class="msg-time">${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+      </div>
+    `).join('');
+    msgsContainer.scrollTop = msgsContainer.scrollHeight;
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function sendMsg() {
+  const inp = document.getElementById('chat-input');
+  const txt = inp.value.trim();
+  if (!txt || !activeConversationId) return;
+
+  try {
+    await apiCall('/api/chat', 'POST', {
+      conversation_id: activeConversationId,
+      content: txt
+    });
+    inp.value = '';
+    const name = document.getElementById('ch-name').textContent;
+    const skin = document.getElementById('ch-ava').textContent;
+    openConversation(activeConversationId, name, skin);
+    loadConversations();
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 // ── CALL ──

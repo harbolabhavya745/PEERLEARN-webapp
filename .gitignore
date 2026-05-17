@@ -1,3 +1,4 @@
 README_backend.md
 .vercel
-.env*.local
+.env
+.env.*

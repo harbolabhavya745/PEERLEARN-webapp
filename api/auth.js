@@ -2,6 +2,7 @@ import { supabaseAdmin, supabaseAnon } from '../lib/supabase.js';
 import { handleCors, json, requireAuth } from '../lib/middleware.js';
 
 export default async function handler(req, res) {
+  console.log('>>> AUTH API REQUEST:', req.method, req.url);
   if (handleCors(req, res)) return;
 
   const url = req.url.split('?')[0];
@@ -9,31 +10,42 @@ export default async function handler(req, res) {
   // ── POST /api/auth/signup ─────────────────────────────────────────
   if (url === '/api/auth/signup' && req.method === 'POST') {
     const { email, password, full_name, college, course } = req.body;
+    console.log('--- SIGNUP START ---', { email, full_name });
+
     if (!email || !password || !full_name) {
       return json(res, 400, { error: 'email, password and full_name are required' });
     }
 
+    console.log('Attempting to create user in Supabase Auth...');
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: false,
+      email_confirm: true,
       user_metadata: { full_name, college, course },
     });
 
-    if (error) return json(res, 400, { error: error.message });
+    if (error) {
+      console.log('Supabase Auth Error:', error.message);
+      return json(res, 400, { error: error.message });
+    }
+    console.log('User created successfully:', data.user.id);
 
-    await supabaseAdmin
+    console.log('Updating profile table...');
+    const { error: profileErr } = await supabaseAdmin
       .from('profiles')
       .update({ full_name, college, course })
       .eq('id', data.user.id);
+    
+    if (profileErr) console.log('Profile update error (non-fatal):', profileErr.message);
 
+    console.log('Granting default skin...');
     await supabaseAdmin
       .from('user_skins')
-      .insert({ user_id: data.user.id, skin_key: 'default' })
-      .onConflict(['user_id', 'skin_key']).ignore();
+      .upsert({ user_id: data.user.id, skin_key: 'default' }, { onConflict: 'user_id,skin_key' });
 
+    console.log('--- SIGNUP COMPLETE ---');
     return json(res, 201, {
-      message: 'Account created! Please verify your email before signing in.',
+      message: 'Account created! You can now sign in immediately.',
       user_id: data.user.id,
     });
   }

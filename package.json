@@ -4,7 +4,6 @@
   "description": "PeerLearn – Student academic & skill growth platform",
   "private": true,
   "scripts": {
-    "dev": "echo 'Use vercel dev directly in the terminal'",
     "build": "echo 'No build step needed'"
   },
   "dependencies": {

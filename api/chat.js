@@ -204,11 +204,23 @@ export default async function handler(req, res) {
       const { conversation_id } = req.query;
       if (!conversation_id) return json(res, 400, { error: 'conversation_id is required' });
 
-      await supabaseAdmin
+      // Get existing read_by for messages in this conversation
+      const { data: messages } = await supabaseAdmin
         .from('messages')
-        .update({ read_by: supabaseAdmin.sql`array_append(read_by, ${req.user.id}::uuid)` })
-        .eq('conversation_id', conversation_id)
-        .not('read_by', 'cs', `{${req.user.id}}`);
+        .select('id, read_by')
+        .eq('conversation_id', conversation_id);
+
+      if (messages) {
+        for (const msg of messages) {
+          if (!msg.read_by.includes(req.user.id)) {
+            const newReadBy = [...msg.read_by, req.user.id];
+            await supabaseAdmin
+              .from('messages')
+              .update({ read_by: newReadBy })
+              .eq('id', msg.id);
+          }
+        }
+      }
 
       return json(res, 200, { message: 'Marked as read' });
     }

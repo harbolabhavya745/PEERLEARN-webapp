@@ -100,30 +100,38 @@ export default async function handler(req, res) {
     const alreadyFollowing = (followingData || []).map(f => f.following_id);
     alreadyFollowing.push(me.id);
 
-    const excludeClause = `(${alreadyFollowing.join(',')})`;
+    // Filter out invalid or empty IDs to prevent SQL errors
+    const validIds = alreadyFollowing.filter(id => id && id.length > 0);
 
     if (me.course && me.college) {
-      const { data: sameCourse } = await supabaseAdmin
+      let query = supabaseAdmin
         .from('profiles')
         .select('id, full_name, username, college, course, skills, avatar_skin, avatar_url, xp, level')
         .eq('course', me.course)
-        .eq('college', me.college)
-        .not('id', 'in', excludeClause)
-        .limit(5);
+        .eq('college', me.college);
+
+      if (validIds.length > 0) {
+        query = query.not('id', 'in', `(${validIds.join(',')})`);
+      }
+      
+      const { data: sameCourse } = await query.limit(5);
 
       if (sameCourse?.length) {
         const sameCourseIds = sameCourse.map(u => u.id);
-        const excludeIds = [...alreadyFollowing, ...sameCourseIds];
-        const excludeClause2 = `(${excludeIds.join(',')})`;
-
+        const excludeIds = [...validIds, ...sameCourseIds];
+        
         let skillMatches = [];
         if (me.skills?.length) {
-          const { data: bySkill } = await supabaseAdmin
+          let skillQuery = supabaseAdmin
             .from('profiles')
             .select('id, full_name, username, college, course, skills, avatar_skin, avatar_url, xp, level')
-            .overlaps('skills', me.skills)
-            .not('id', 'in', excludeClause2)
-            .limit(5);
+            .overlaps('skills', me.skills);
+          
+          if (excludeIds.length > 0) {
+            skillQuery = skillQuery.not('id', 'in', `(${excludeIds.join(',')})`);
+          }
+          
+          const { data: bySkill } = await skillQuery.limit(5);
           skillMatches = bySkill || [];
         }
 
@@ -136,12 +144,16 @@ export default async function handler(req, res) {
       }
     }
 
-    const { data: fallback } = await supabaseAdmin
+    let fallbackQuery = supabaseAdmin
       .from('profiles')
       .select('id, full_name, username, college, course, skills, avatar_skin, avatar_url, xp, level')
-      .not('id', 'in', excludeClause)
-      .order('xp', { ascending: false })
-      .limit(10);
+      .order('xp', { ascending: false });
+
+    if (validIds.length > 0) {
+      fallbackQuery = fallbackQuery.not('id', 'in', `(${validIds.join(',')})`);
+    }
+
+    const { data: fallback } = await fallbackQuery.limit(10);
 
     return json(res, 200, {
       suggestions: (fallback || []).map(u => ({ ...u, match_reason: 'Popular on PeerLearn' })),

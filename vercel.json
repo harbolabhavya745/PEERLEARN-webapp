@@ -1,6 +1,14 @@
 {
   "version": 2,
   "rewrites": [
+    { "source": "/api/auth/:path*", "destination": "/api/auth.js" },
+    { "source": "/api/chat/:path*", "destination": "/api/chat.js" },
+    { "source": "/api/notes/:path*", "destination": "/api/notes.js" },
+    { "source": "/api/users/:path*", "destination": "/api/users.js" },
+    { "source": "/api/upload/:path*", "destination": "/api/upload/index.js" },
+    { "source": "/api/follows/:path*", "destination": "/api/follows/index.js" },
+    { "source": "/api/quiz/:path*", "destination": "/api/quiz/index.js" },
+    { "source": "/api/premium/:path*", "destination": "/api/premium/index.js" },
     {
       "source": "/((?!api/).*)",
       "destination": "/public/index.html"
