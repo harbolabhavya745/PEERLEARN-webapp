@@ -1,9 +1,18 @@
 {
   "version": 2,
   "rewrites": [
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/public/index.html"
-    }
+    { "source": "/api/auth/(.*)", "destination": "/api/auth.js" },
+    { "source": "/api/users/(.*)", "destination": "/api/users.js" },
+    { "source": "/api/notes/(.*)", "destination": "/api/notes.js" },
+    { "source": "/api/notes",     "destination": "/api/notes.js" },
+    { "source": "/api/chat/(.*)", "destination": "/api/chat.js" },
+    { "source": "/api/dashboard", "destination": "/api/dashboard.js" },
+    { "source": "/api/skins",     "destination": "/api/skins.js" },
+    { "source": "/api/follows",   "destination": "/api/follows/index.js" },
+    { "source": "/api/quiz/(.*)", "destination": "/api/quiz/index.js" },
+    { "source": "/api/quiz",      "destination": "/api/quiz/index.js" },
+    { "source": "/api/premium/(.*)", "destination": "/api/premium/index.js" },
+    { "source": "/api/upload/(.*)",  "destination": "/api/upload/index.js" },
+    { "source": "/((?!api/).*)",     "destination": "/public/index.html" }
   ]
 }
