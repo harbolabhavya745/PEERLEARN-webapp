@@ -562,7 +562,10 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
             <div style="padding:0 20px 20px">
               <div class="profile-ava-wrap" id="main-ava-wrap">
                 <div class="profile-ava" id="main-avatar">A</div>
-                <div class="ava-edit-btn"><i class="ti ti-pencil" style="font-size:10px"></i></div>
+                <div class="ava-edit-btn" onclick="document.getElementById('avatar-input').click()">
+                  <i class="ti ti-pencil" style="font-size:10px"></i>
+                </div>
+                <input type="file" id="avatar-input" class="hidden" accept="image/*" onchange="handleAvatarUpload(this)">
               </div>
               <div class="flex aic jb mb12">
                 <div>
@@ -1112,14 +1115,14 @@ async function loadSkins() {
 
     if (data.skins) {
       container.innerHTML = data.skins.map(skin => {
-        const isOwned = data.owned_keys.includes(skin.key);
+        const isOwned = skin.owned;
         const isSelected = currentUser.avatar_skin === skin.emoji;
 
         return `
           <div class="skin-item ${isSelected ? 'selected' : ''} ${!isOwned ? 'skin-locked' : ''}" 
-               onclick="${isOwned ? `applySkin('${skin.emoji}', '${skin.key}')` : `unlockSkin('${skin.key}', ${skin.price_xp})`}">
+               onclick="${isOwned ? `applySkin('${skin.emoji}', '${skin.key}')` : `unlockSkin('${skin.key}', ${skin.xp_required})`}">
             <div class="skin-ava" style="background:rgba(99,102,241,.12)">${skin.emoji}</div>
-            <div class="skin-name">${skin.name} ${!isOwned ? `(🔒 ${skin.price_xp} XP)` : ''}</div>
+            <div class="skin-name">${skin.name} ${!isOwned ? `(🔒 ${skin.xp_required} XP)` : ''}</div>
           </div>
         `;
       }).join('');
@@ -1131,8 +1134,9 @@ async function loadSkins() {
 
 async function applySkin(emoji, key) {
   try {
-    await apiCall('/api/auth/me', 'PATCH', { avatar_skin: emoji });
+    await apiCall('/api/auth/me', 'PATCH', { avatar_skin: emoji, avatar_url: null });
     currentUser.avatar_skin = emoji;
+    currentUser.avatar_url = null;
     updateUIWithUserData();
     loadSkins();
   } catch (err) {
@@ -1263,15 +1267,25 @@ function updateUIWithUserData() {
       profAva.innerHTML = `<img src="${currentUser.avatar_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
     } else {
       profAva.textContent = currentUser.avatar_skin || '👤';
-      // If we have a skin color, we should ideally restore the gradient background here too
     }
     // Apply saved frame border color
     if (currentUser.avatar_frame) {
       profAva.style.border = `3px solid ${currentUser.avatar_frame}`;
-      profAva.dataset.frame = currentUser.avatar_frame; // Sync dataset
+      profAva.dataset.frame = currentUser.avatar_frame;
+      
+      // Highlight selected frame in grid
+      document.querySelectorAll('.frame-item').forEach(item => {
+        // We match by the color string used in the onclick
+        const onclick = item.getAttribute('onclick');
+        if (onclick && onclick.includes(`'${currentUser.avatar_frame}'`)) {
+          item.classList.add('selected');
+        } else {
+          item.classList.remove('selected');
+        }
+      });
     }
     if (currentUser.avatar_skin) {
-      profAva.dataset.emoji = currentUser.avatar_skin; // Sync dataset
+      profAva.dataset.emoji = currentUser.avatar_skin;
     }
   }
 
@@ -1281,6 +1295,9 @@ function updateUIWithUserData() {
       el.innerHTML = `<img src="${currentUser.avatar_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover">`;
     } else {
       el.textContent = currentUser.avatar_skin || '👤';
+    }
+    if (currentUser.avatar_frame) {
+      el.style.borderColor = currentUser.avatar_frame;
     }
   });
 
@@ -1441,12 +1458,20 @@ function selectSkin(el,emoji,color,name){
   a.style.fontSize='28px';
   document.querySelector('.nav-avatar').textContent=emoji;
 }
-function selectFrame(el,color,extra){
+async function selectFrame(el,color,extra){
   document.querySelectorAll('.frame-item').forEach(f=>f.classList.remove('selected'));
   el.classList.add('selected');
   const mainAva = document.getElementById('main-avatar');
   mainAva.style.border=`3px solid ${color}`;
-  mainAva.dataset.frame = color; // Store for saving
+  mainAva.dataset.frame = color;
+  
+  try {
+    await apiCall('/api/auth/me', 'PATCH', { avatar_frame: color });
+    currentUser.avatar_frame = color;
+    updateUIWithUserData();
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 // ── QUIZ ENGINE ──
