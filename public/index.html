@@ -205,7 +205,11 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
 ───────────────────────────────────── */
 .chat-layout{display:grid;grid-template-columns:260px 1fr;gap:0;height:calc(100vh - 56px);overflow:hidden;margin:-24px}
 .chat-sidebar{background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-.chat-search{padding:12px}
+.chat-search{padding:12px;position:relative}
+.chat-search-results{position:absolute;top:100%;left:12px;right:12px;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);z-index:50;max-height:300px;overflow-y:auto}
+.search-result-item{padding:10px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .15s}
+.search-result-item:hover{background:var(--bg3)}
+.search-result-ava{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
 .chat-list{overflow-y:auto;flex:1}
 .chat-item{padding:10px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;transition:background .15s;position:relative}
 .chat-item:hover{background:var(--bg3)}
@@ -823,49 +827,20 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
     <div id="p-chat" class="page" style="padding:0">
       <div class="chat-layout">
         <div class="chat-sidebar">
-          <div class="chat-search"><input placeholder="🔍  Search conversations..."></div>
+          <div class="chat-search">
+            <input placeholder="🔍  Search connections..." oninput="handleChatSearch(this.value)">
+            <div id="chat-search-results" class="chat-search-results hidden"></div>
+          </div>
           <div style="padding:8px 12px 4px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:700">Direct Messages</div></div>
           <div class="chat-list" id="chat-list">
-            <div class="chat-item active" onclick="openChat(this,'Riya Patel','R','rgba(5,150,105,.15)','var(--green)')">
-              <div class="chat-ava" style="background:rgba(5,150,105,.15);color:var(--green)">R</div>
-              <div style="flex:1;min-width:0"><div class="chat-name">Riya Patel <span class="online-dot" style="width:6px;height:6px"></span></div><div class="chat-preview">Can you explain Big-O again?</div></div>
-              <div class="chat-time">2m</div>
-            </div>
-            <div class="chat-item" onclick="openChat(this,'Kabir Singh','K','rgba(219,39,119,.15)','var(--cyan)')">
-              <div class="chat-ava" style="background:rgba(219,39,119,.15);color:var(--cyan)">K</div>
-              <div style="flex:1;min-width:0"><div class="chat-name">Kabir Singh</div><div class="chat-preview">Study room tonight at 9?</div></div>
-              <div class="chat-time">18m</div>
-              <div class="unread-dot"></div>
-            </div>
-            <div class="chat-item" onclick="openChat(this,'Sneha Mehta','S','rgba(124,58,237,.15)','var(--purple)')">
-              <div class="chat-ava" style="background:rgba(124,58,237,.15);color:var(--purple)">S</div>
-              <div style="flex:1;min-width:0"><div class="chat-name">Sneha Mehta</div><div class="chat-preview">I shared the notes link 📎</div></div>
-              <div class="chat-time">1h</div>
-            </div>
-            <div class="chat-item" onclick="openChat(this,'Mohit Rao','M','rgba(217,119,6,.15)','var(--gold)')">
-              <div class="chat-ava" style="background:rgba(217,119,6,.15);color:var(--gold)">M</div>
-              <div style="flex:1;min-width:0"><div class="chat-name">Mohit Rao</div><div class="chat-preview">Chapter 5 summary done ✅</div></div>
-              <div class="chat-time">3h</div>
-            </div>
-            <div style="padding:12px 12px 4px;margin-top:8px"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:700">Study Groups</div></div>
-            <div class="chat-item" onclick="openChat(this,'DSA Warriors','🌲','rgba(5,150,105,.15)','var(--green)')">
-              <div class="chat-ava" style="background:rgba(5,150,105,.1)">🌲</div>
-              <div style="flex:1;min-width:0"><div class="chat-name">DSA Warriors</div><div class="chat-preview">Next session: Graphs 🔥</div></div>
-              <div class="chat-time">5m</div>
-              <div class="unread-dot"></div>
-            </div>
-            <div class="chat-item" onclick="openChat(this,'Physics Squad','⚛️','rgba(219,39,119,.15)','var(--cyan)')">
-              <div class="chat-ava" style="background:rgba(219,39,119,.1)">⚛️</div>
-              <div style="flex:1;min-width:0"><div class="chat-name">Physics Squad</div><div class="chat-preview">Doubt: Gauss's Law derivation</div></div>
-              <div class="chat-time">2h</div>
-            </div>
+            <div style="padding:40px;text-align:center"><i class="ti ti-loader spin" style="font-size:24px;color:var(--text3)"></i></div>
           </div>
         </div>
         <div class="chat-main">
           <div class="chat-header">
             <div class="flex aic gap10">
-              <div id="ch-ava" class="chat-ava" style="background:rgba(5,150,105,.15);color:var(--green);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">R</div>
-              <div><div style="font-size:14px;font-weight:700;color:var(--text)" id="ch-name">Riya Patel</div><div style="font-size:11px;color:var(--green);font-weight:600">Online now</div></div>
+              <div id="ch-ava" class="chat-ava" style="background:var(--bg3);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700">?</div>
+              <div><div style="font-size:14px;font-weight:700;color:var(--text)" id="ch-name">Select a chat</div><div style="font-size:11px;color:var(--text3);font-weight:600" id="ch-status">...</div></div>
             </div>
             <div class="flex gap8">
               <button class="btn btn-ghost btn-sm" onclick="showPage('call',document.getElementById('nav-call'))"><i class="ti ti-phone"></i></button>
@@ -874,11 +849,9 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
             </div>
           </div>
           <div class="chat-messages" id="chat-messages">
-            <div class="msg theirs"><div class="msg-bubble">Hey! Can you explain the difference between O(n log n) and O(n²)?</div><div class="msg-time">3:42 PM</div></div>
-            <div class="msg mine"><div class="msg-bubble">Sure! O(n log n) is typical of efficient sorting like Merge Sort — it grows much slower than O(n²) which you get with Bubble or Insertion Sort.</div><div class="msg-time">3:44 PM</div></div>
-            <div class="msg theirs"><div class="msg-bubble">Oh that makes sense! So for large inputs, n log n is way better?</div><div class="msg-time">3:45 PM</div></div>
-            <div class="msg mine"><div class="msg-bubble">Exactly. For n=1000, n² = 1,000,000 ops while n log n ≈ 10,000. Huge difference! 🚀</div><div class="msg-time">3:46 PM</div></div>
-            <div class="msg theirs"><div class="msg-bubble">You're a lifesaver 😄 Can you explain Big-O for space complexity?</div><div class="msg-time">3:48 PM</div></div>
+            <div style="padding:100px 20px;text-align:center;color:var(--text3);font-size:14px">
+              Select a peer from the list to start chatting!
+            </div>
           </div>
           <div class="chat-input-row">
             <button class="btn btn-ghost btn-icon"><i class="ti ti-paperclip"></i></button>
@@ -1000,11 +973,56 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ── CORE STATE & API ──
 let currentUser = null;
 let currentToken = localStorage.getItem('peerlearn_token');
 let isLoggingIn = false;
+
+// Initialize Supabase for Realtime
+const SUPABASE_URL = 'https://gornehhkjickglfnobvl.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdvcm5laGhramlja2dsZm5vYnZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTIxMjMsImV4cCI6MjA5NDUyODEyM30.J5pyX0PBWUwys5xw8xGhyX5ywiPl837sB1lDCJ3vpUw';
+let supabaseClient = null;
+let globalChatSubscription = null;
+
+function initSupabase() {
+  const options = {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    }
+  };
+  // We don't pass headers to createClient anymore; we rely on the session if needed, 
+  // but for Realtime, the anon key + RLS usually suffices unless we use broad policies.
+  supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, options);
+  setupGlobalChatListener();
+}
+
+function setupGlobalChatListener() {
+  if (globalChatSubscription) {
+    supabaseClient.removeChannel(globalChatSubscription);
+  }
+
+  globalChatSubscription = supabaseClient
+    .channel('any')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+      const m = payload.new;
+      console.log('New message received:', m);
+      
+      // Always refresh sidebar for previews
+      loadConversations();
+      
+      // If this message belongs to the current OPEN chat, append it to the main window
+      if (activeConversationId === m.conversation_id) {
+        // Only append if it's from the OTHER person (we already append our own optimistically)
+        if (m.sender_id !== currentUser.id) {
+          appendMessage(m, 'theirs');
+        }
+      }
+    })
+    .subscribe();
+}
 
 /**
  * Generic API helper to talk to our backend.
@@ -1070,6 +1088,7 @@ async function handleAuth() {
       const data = await apiCall('/api/auth/login', 'POST', { email, password });
       currentToken = data.access_token;
       localStorage.setItem('peerlearn_token', currentToken);
+      initSupabase();
       await loadInitialData();
       enterApp();
     } else {
@@ -1219,10 +1238,16 @@ async function loadSuggestedPeers() {
 
 async function followUser(userId) {
   try {
+    // 1. Follow the user
     await apiCall('/api/follows', 'POST', { following_id: userId });
-    alert('Connected!');
+    
+    // 2. Create a DM conversation
+    await apiCall('/api/chat/conversations', 'POST', { type: 'dm', user_id: userId });
+    
+    alert('Connected and chat started!');
     loadDashboardData();
     loadSuggestedPeers();
+    loadConversations(); // Refresh chat list
   } catch (err) {
     alert(err.message);
   }
@@ -1410,6 +1435,7 @@ function logout() {
 // Check for existing session on load
 window.addEventListener('DOMContentLoaded', async () => {
   if (currentToken) {
+    initSupabase();
     await loadInitialData();
     enterApp();
   }
@@ -1594,24 +1620,24 @@ function backToQuizHome() {
 
 // ── CHAT ──
 let activeConversationId = null;
+let userConnections = [];
 
 async function loadConversations() {
   try {
-    const data = await apiCall('/api/chat');
+    const data = await apiCall('/api/chat/conversations');
     const list = document.getElementById('chat-list');
     if (!list) return;
     
     if (data.conversations && data.conversations.length > 0) {
       list.innerHTML = data.conversations.map(conv => {
-        const otherUser = conv.other_user || { full_name: 'Unknown', avatar_skin: '👤' };
-        const lastMsg = conv.last_message || { content: 'No messages yet', created_at: new Date() };
+        const lastMsg = conv.last_message || { content: 'No messages yet', created_at: conv.created_at };
         
         return `
           <div class="chat-item ${activeConversationId === conv.id ? 'active' : ''}" 
-               onclick="openConversation('${conv.id}', '${otherUser.full_name}', '${otherUser.avatar_skin || '👤'}')">
-            <div class="chat-ava" style="background:var(--bg3)">${otherUser.avatar_skin || otherUser.full_name[0]}</div>
+               onclick="openConversation('${conv.id}', '${conv.display_name}', '${conv.display_avatar || '👤'}')">
+            <div class="chat-ava" style="background:var(--bg3)">${conv.display_avatar || conv.display_name[0]}</div>
             <div style="flex:1;min-width:0">
-              <div class="chat-name">${otherUser.full_name}</div>
+              <div class="chat-name">${conv.display_name}</div>
               <div class="chat-preview">${lastMsg.content}</div>
             </div>
             <div class="chat-time">${new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
@@ -1626,6 +1652,63 @@ async function loadConversations() {
   }
 }
 
+async function handleChatSearch(query) {
+  const resultsDiv = document.getElementById('chat-search-results');
+  if (!query.trim()) {
+    resultsDiv.classList.add('hidden');
+    return;
+  }
+
+  try {
+    // Load connections if not loaded
+    if (userConnections.length === 0) {
+      const data = await apiCall('/api/follows?type=following');
+      userConnections = data.users || [];
+    }
+
+    const filtered = userConnections.filter(u => 
+      u.full_name.toLowerCase().includes(query.toLowerCase()) || 
+      u.username?.toLowerCase().includes(query.toLowerCase())
+    );
+
+    if (filtered.length > 0) {
+      resultsDiv.innerHTML = filtered.map(u => `
+        <div class="search-result-item" onclick="startChatWith('${u.id}', '${u.full_name}', '${u.avatar_skin || '👤'}')">
+          <div class="search-result-ava" style="background:var(--bg3)">${u.avatar_skin || u.full_name[0]}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text)">${u.full_name}</div>
+        </div>
+      `).join('');
+      resultsDiv.classList.remove('hidden');
+    } else {
+      resultsDiv.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--text3);text-align:center">No connections found</div>';
+      resultsDiv.classList.remove('hidden');
+    }
+  } catch (err) {
+    console.error('Search failed:', err);
+  }
+}
+
+async function startChatWith(userId, name, skin) {
+  document.getElementById('chat-search-results').classList.add('hidden');
+  document.querySelector('.chat-search input').value = '';
+
+  try {
+    const data = await apiCall('/api/chat/conversations', 'POST', { type: 'dm', user_id: userId });
+    openConversation(data.conversation_id, name, skin);
+    loadConversations();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// Close search results when clicking outside
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.chat-search')) {
+    const res = document.getElementById('chat-search-results');
+    if (res) res.classList.add('hidden');
+  }
+});
+
 async function openConversation(id, name, skin) {
   activeConversationId = id;
   document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
@@ -1635,6 +1718,12 @@ async function openConversation(id, name, skin) {
   
   const headerName = document.getElementById('ch-name');
   if (headerName) headerName.textContent = name;
+
+  const headerStatus = document.getElementById('ch-status');
+  if (headerStatus) {
+    headerStatus.textContent = 'Active now';
+    headerStatus.style.color = 'var(--green)';
+  }
   
   const msgsContainer = document.getElementById('chat-messages');
   if (!msgsContainer) return;
@@ -1642,9 +1731,9 @@ async function openConversation(id, name, skin) {
   msgsContainer.innerHTML = '<div class="ti ti-loader spin" style="font-size:24px;margin:40px auto;display:block"></div>';
 
   try {
-    const data = await apiCall(`/api/chat?conversation_id=${id}`);
+    const data = await apiCall(`/api/chat/messages?conversation_id=${id}`);
     msgsContainer.innerHTML = (data.messages || []).map(m => `
-      <div class="msg ${m.sender_id === currentUser.id ? 'mine' : 'theirs'}">
+      <div class="msg ${m.sender?.id === currentUser.id ? 'mine' : 'theirs'}">
         <div class="msg-bubble">${m.content}</div>
         <div class="msg-time">${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
       </div>
@@ -1655,21 +1744,49 @@ async function openConversation(id, name, skin) {
   }
 }
 
+// Polling fallback (runs every 5 seconds to ensure UI stays in sync)
+setInterval(() => {
+  if (currentToken) {
+    loadConversations();
+  }
+}, 5000);
+
+function appendMessage(m, type) {
+  const msgsContainer = document.getElementById('chat-messages');
+  if (!msgsContainer) return;
+
+  // Remove empty state if present
+  const emptyState = msgsContainer.querySelector('div[style*="padding:100px"]');
+  if (emptyState) {
+    msgsContainer.innerHTML = '';
+  }
+
+  const msgHtml = `
+    <div class="msg ${type}">
+      <div class="msg-bubble">${m.content}</div>
+      <div class="msg-time">${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+    </div>
+  `;
+  msgsContainer.insertAdjacentHTML('beforeend', msgHtml);
+  msgsContainer.scrollTop = msgsContainer.scrollHeight;
+}
+
 async function sendMsg() {
   const inp = document.getElementById('chat-input');
   const txt = inp.value.trim();
   if (!txt || !activeConversationId) return;
 
   try {
-    await apiCall('/api/chat', 'POST', {
+    const res = await apiCall('/api/chat/messages', 'POST', {
       conversation_id: activeConversationId,
       content: txt
     });
     inp.value = '';
-    const name = document.getElementById('ch-name').textContent;
-    const skin = document.getElementById('ch-ava').textContent;
-    openConversation(activeConversationId, name, skin);
-    loadConversations();
+    
+    // Optimistically add message to UI
+    appendMessage(res.message, 'mine');
+    
+    loadConversations(); // Update previews
   } catch (err) {
     alert(err.message);
   }

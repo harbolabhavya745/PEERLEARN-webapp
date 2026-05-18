@@ -52,11 +52,23 @@ export default async function handler(req, res) {
       if (error) return json(res, 500, { error: error.message });
 
       const enriched = conversations.map(conv => {
+        const lastMsg = (conv.last_message || [])[0];
         if (!conv.is_group) {
           const other = conv.members.map(m => m.user).find(u => u.id !== req.user.id);
-          return { ...conv, display_name: other?.full_name, display_avatar: other?.avatar_skin, other_user: other };
+          return { 
+            ...conv, 
+            display_name: other?.full_name, 
+            display_avatar: other?.avatar_skin, 
+            other_user: other,
+            last_message: lastMsg 
+          };
         }
-        return { ...conv, display_name: conv.name, display_avatar: conv.avatar };
+        return { 
+          ...conv, 
+          display_name: conv.name, 
+          display_avatar: conv.avatar,
+          last_message: lastMsg
+        };
       });
 
       return json(res, 200, { conversations: enriched });
@@ -69,32 +81,32 @@ export default async function handler(req, res) {
       if (type === 'dm') {
         if (!user_id) return json(res, 400, { error: 'user_id is required for DM' });
 
-        // Check if DM already exists
-        const { data: existing } = await supabaseAdmin
+        // Robust check for existing DM:
+        // 1. Get all conversation IDs that I am a member of
+        const { data: myMemberships } = await supabaseAdmin
           .from('conversation_members')
           .select('conversation_id')
           .eq('user_id', req.user.id);
 
-        if (existing?.length) {
-          const myConvIds = existing.map(e => e.conversation_id);
-          const { data: shared } = await supabaseAdmin
+        if (myMemberships && myMemberships.length > 0) {
+          const myConvIds = myMemberships.map(m => m.conversation_id);
+
+          // 2. Check if the target user is also in any of those conversations
+          // AND ensure the conversation is NOT a group
+          const { data: sharedDM } = await supabaseAdmin
             .from('conversation_members')
-            .select('conversation_id')
+            .select('conversation_id, conversations!inner(is_group)')
             .eq('user_id', user_id)
-            .in('conversation_id', myConvIds);
+            .in('conversation_id', myConvIds)
+            .eq('conversations.is_group', false)
+            .limit(1);
 
-          if (shared?.length) {
-            const { data: dmConv } = await supabaseAdmin
-              .from('conversations')
-              .select('id')
-              .in('id', shared.map(s => s.conversation_id))
-              .eq('is_group', false)
-              .single();
-
-            if (dmConv) return json(res, 200, { conversation_id: dmConv.id, existing: true });
+          if (sharedDM && sharedDM.length > 0) {
+            return json(res, 200, { conversation_id: sharedDM[0].conversation_id, existing: true });
           }
         }
 
+        // No DM found, create a new one
         const { data: conv, error } = await supabaseAdmin
           .from('conversations')
           .insert({ is_group: false, created_by: req.user.id })
