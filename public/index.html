@@ -33,6 +33,9 @@ body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-
 .nav-btn:hover{background:var(--bg3);color:var(--text2)}
 .nav-btn.active{background:rgba(99,102,241,.12);color:var(--accent)}
 .nav-btn .tip{position:absolute;left:54px;background:var(--text);border-radius:var(--rxs);padding:4px 10px;font-size:11px;white-space:nowrap;color:#fff;opacity:0;pointer-events:none;transition:opacity .15s;z-index:300}
+.nav-unread-dot{position:absolute;top:6px;right:6px;width:9px;height:9px;border-radius:50%;background:#3b82f6;border:2px solid var(--bg2);display:none;animation:pulse-dot 2s infinite}
+.nav-unread-dot.show{display:block}
+@keyframes pulse-dot{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.5)}60%{box-shadow:0 0 0 5px rgba(59,130,246,0)}}
 .nav-btn:hover .tip{opacity:1}
 .nav-spacer{flex:1}
 .nav-avatar{width:36px;height:36px;border-radius:50%;border:2px solid var(--accent);background:linear-gradient(135deg,#c8ff00,#ff2d9b);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff}
@@ -363,7 +366,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
 
 /* MOBILE BOTTOM NAV */
 .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:58px;background:var(--bg2);border-top:1px solid var(--border);z-index:200;align-items:center;justify-content:space-around;padding:0 4px;box-shadow:0 -4px 20px rgba(99,102,241,0.08)}
-.mobile-nav-btn{flex:1;height:100%;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text3);font-size:18px;transition:color .18s;padding:0}
+.mobile-nav-btn{flex:1;height:100%;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--text3);font-size:18px;transition:color .18s;padding:0;position:relative}
 .mobile-nav-btn span{font-size:9px;font-weight:700;color:inherit}
 .mobile-nav-btn.active{color:var(--accent)}
 
@@ -485,7 +488,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
     <button class="nav-btn" id="nav-profile" onclick="showPage('profile',this)"><i class="ti ti-user-circle"></i><span class="tip">Profile &amp; Skins</span></button>
     <button class="nav-btn" id="nav-quiz" onclick="showPage('quiz',this)"><i class="ti ti-brain"></i><span class="tip">AI Quizzes</span></button>
     <button class="nav-btn" id="nav-premium" onclick="showPage('premium',this)"><i class="ti ti-crown"></i><span class="tip">Premium</span></button>
-    <button class="nav-btn" id="nav-chat" onclick="showPage('chat',this)"><i class="ti ti-message-circle"></i><span class="tip">Chat</span></button>
+    <button class="nav-btn" id="nav-chat" onclick="showPage('chat',this);clearChatUnread()"><i class="ti ti-message-circle"></i><span class="tip">Chat</span><span class="nav-unread-dot" id="chat-unread-dot"></span></button>
     <button class="nav-btn" id="nav-call" onclick="showPage('call',this)"><i class="ti ti-video"></i><span class="tip">Voice / Video</span></button>
     <div class="nav-spacer"></div>
     <button class="dark-toggle" id="sidebar-dark-btn" onclick="toggleDark()"><i class="ti ti-moon" id="sidebar-dark-icon"></i><span class="tip" id="sidebar-dark-tip">Dark Mode</span></button>
@@ -921,7 +924,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
   <nav class="mobile-nav">
     <button class="mobile-nav-btn active" id="mnav-home" onclick="showPage('home',this);setMobileNav(this)"><i class="ti ti-home"></i><span>Home</span></button>
     <button class="mobile-nav-btn" id="mnav-quiz" onclick="showPage('quiz',this);setMobileNav(this)"><i class="ti ti-brain"></i><span>Quiz</span></button>
-    <button class="mobile-nav-btn" id="mnav-chat" onclick="showPage('chat',this);setMobileNav(this)"><i class="ti ti-message-circle"></i><span>Chat</span></button>
+    <button class="mobile-nav-btn" id="mnav-chat" onclick="showPage('chat',this);setMobileNav(this);clearChatUnread()" style="position:relative"><i class="ti ti-message-circle"></i><span>Chat</span><span class="nav-unread-dot" id="mnav-chat-unread-dot"></span></button>
     <button class="mobile-nav-btn" id="mnav-call" onclick="showPage('call',this);setMobileNav(this)"><i class="ti ti-video"></i><span>Calls</span></button>
     <button class="mobile-nav-btn" id="mnav-profile" onclick="showPage('profile',this);setMobileNav(this)"><i class="ti ti-user-circle"></i><span>Profile</span></button>
     <button class="mobile-nav-btn" onclick="toggleDark()"><i class="ti ti-moon" id="mnav-dark-icon"></i><span>Theme</span></button>
@@ -1023,12 +1026,39 @@ function setupGlobalChatListener() {
       // Update sidebar
       loadConversations();
       
-      // Update main window (re-fetches to be 100% sure we have full data)
-      refreshActiveChat();
+      const m = payload.new;
+      const isNotMe = String(m.sender_id).toLowerCase() !== String(currentUser?.id).toLowerCase();
+
+      if (isNotMe) {
+        // 1. Refresh active chat if open
+        if (activeConversationId) {
+          refreshActiveChat();
+        }
+
+        // 2. Show unread dot if chat page isn't active
+        const chatPageActive = document.getElementById('p-chat')?.classList.contains('active');
+        if (!chatPageActive) {
+          showChatUnreadDot();
+        }
+      }
     })
     .subscribe((status) => {
       console.log('📡 Real-time Status:', status);
     });
+}
+
+function showChatUnreadDot() {
+  const dot = document.getElementById('chat-unread-dot');
+  if (dot) dot.classList.add('show');
+  const mDot = document.getElementById('mnav-chat-unread-dot');
+  if (mDot) mDot.classList.add('show');
+}
+
+function clearChatUnread() {
+  const dot = document.getElementById('chat-unread-dot');
+  if (dot) dot.classList.remove('show');
+  const mDot = document.getElementById('mnav-chat-unread-dot');
+  if (mDot) mDot.classList.remove('show');
 }
 
 /**
@@ -1283,6 +1313,13 @@ function updateUIWithUserData() {
     const plan = currentUser.plan || 'free';
     planBadge.innerHTML = `<i class="ti ti-crown"></i> ${plan.charAt(0).toUpperCase() + plan.slice(1)}`;
   }
+
+  // Hide premium nav & upgrade button for paid users
+  const isPremium = currentUser.plan && currentUser.plan !== 'free';
+  const navPremium = document.getElementById('nav-premium');
+  if (navPremium) navPremium.style.display = isPremium ? 'none' : '';
+  const upgradeBtn = document.querySelector('.topbar-right .btn');
+  if (upgradeBtn) upgradeBtn.style.display = isPremium ? 'none' : '';
 
   // Update Profile Page
   const profName = document.getElementById('profile-full-name');
@@ -1636,6 +1673,9 @@ async function loadConversations() {
     if (!list) return;
     
     if (data.conversations && data.conversations.length > 0) {
+      // Build a snapshot string of last-message timestamps to detect new messages
+      _lastConvSnapshot = data.conversations.map(c => `${c.id}:${c.last_message?.created_at || ''}`).join('|');
+
       list.innerHTML = data.conversations.map(conv => {
         const lastMsg = conv.last_message || { content: 'No messages yet', created_at: conv.created_at };
         
@@ -1777,9 +1817,17 @@ async function openConversation(id, name, skin) {
 }
 
 // Polling fallback (runs every 5 seconds to ensure UI stays in sync)
-setInterval(() => {
+let _lastConvSnapshot = '';
+setInterval(async () => {
   if (currentToken) {
-    loadConversations();
+    const chatPageActive = document.getElementById('p-chat')?.classList.contains('active');
+    // Capture pre-refresh state to detect new messages
+    const prevSnapshot = _lastConvSnapshot;
+    await loadConversations();
+    // If chat page is NOT active and conversations changed, show unread dot
+    if (!chatPageActive && _lastConvSnapshot && prevSnapshot && _lastConvSnapshot !== prevSnapshot) {
+      showChatUnreadDot();
+    }
   }
 }, 5000);
 
