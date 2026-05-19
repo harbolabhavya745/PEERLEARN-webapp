@@ -986,17 +986,26 @@ const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 let supabaseClient = null;
 let globalChatSubscription = null;
 
-function initSupabase() {
+async function initSupabase() {
+  if (!currentToken) return;
+  
   const options = {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false
-    }
+    auth: { persistSession: false, autoRefreshToken: false }
   };
-  // We don't pass headers to createClient anymore; we rely on the session if needed, 
-  // but for Realtime, the anon key + RLS usually suffices unless we use broad policies.
   supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON, options);
-  setupGlobalChatListener();
+  
+  console.log('Authenticating Supabase Realtime...');
+  const { error } = await supabaseClient.auth.setSession({
+    access_token: currentToken,
+    refresh_token: currentToken
+  });
+
+  if (error) {
+    console.error('Supabase Auth Error:', error.message);
+  } else {
+    console.log('Supabase Realtime Authenticated ✅');
+    setupGlobalChatListener();
+  }
 }
 
 function setupGlobalChatListener() {
@@ -1004,24 +1013,22 @@ function setupGlobalChatListener() {
     supabaseClient.removeChannel(globalChatSubscription);
   }
 
+  console.log('--- Real-time Sync Active ---');
+
   globalChatSubscription = supabaseClient
-    .channel('any')
+    .channel('global-chat')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-      const m = payload.new;
-      console.log('New message received:', m);
+      console.log('🔔 New Message Detected:', payload.new.id);
       
-      // Always refresh sidebar for previews
+      // Update sidebar
       loadConversations();
       
-      // If this message belongs to the current OPEN chat, append it to the main window
-      if (activeConversationId === m.conversation_id) {
-        // Only append if it's from the OTHER person (we already append our own optimistically)
-        if (m.sender_id !== currentUser.id) {
-          appendMessage(m, 'theirs');
-        }
-      }
+      // Update main window (re-fetches to be 100% sure we have full data)
+      refreshActiveChat();
     })
-    .subscribe();
+    .subscribe((status) => {
+      console.log('📡 Real-time Status:', status);
+    });
 }
 
 /**
@@ -1088,8 +1095,8 @@ async function handleAuth() {
       const data = await apiCall('/api/auth/login', 'POST', { email, password });
       currentToken = data.access_token;
       localStorage.setItem('peerlearn_token', currentToken);
-      initSupabase();
-      await loadInitialData();
+      await loadInitialData(); // Load profile FIRST
+      initSupabase();        // Then init Realtime
       enterApp();
     } else {
       const full_name = document.getElementById('reg-name').value;
@@ -1435,8 +1442,8 @@ function logout() {
 // Check for existing session on load
 window.addEventListener('DOMContentLoaded', async () => {
   if (currentToken) {
-    initSupabase();
-    await loadInitialData();
+    await loadInitialData(); // Load profile FIRST
+    initSupabase();        // Then init Realtime
     enterApp();
   }
 });
@@ -1649,6 +1656,31 @@ async function loadConversations() {
     }
   } catch (err) {
     console.error('Failed to load chats:', err);
+  }
+}
+
+// Highly reliable: Re-fetches just the messages for the active window without clearing it
+async function refreshActiveChat() {
+  if (!activeConversationId) return;
+  try {
+    const data = await apiCall(`/api/chat/messages?conversation_id=${activeConversationId}`);
+    const msgsContainer = document.getElementById('chat-messages');
+    if (!msgsContainer) return;
+
+    const html = (data.messages || []).map(m => `
+      <div class="msg ${m.sender?.id === currentUser.id ? 'mine' : 'theirs'}">
+        <div class="msg-bubble">${m.content}</div>
+        <div class="msg-time">${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+      </div>
+    `).join('');
+    
+    // Only update if content changed to avoid flicker
+    if (msgsContainer.innerHTML !== html) {
+      msgsContainer.innerHTML = html;
+      msgsContainer.scrollTop = msgsContainer.scrollHeight;
+    }
+  } catch (err) {
+    console.error('Refresh active chat failed:', err);
   }
 }
 
