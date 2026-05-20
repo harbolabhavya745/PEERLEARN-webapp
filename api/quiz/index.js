@@ -1,20 +1,13 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabaseAdmin } from '../../lib/supabase.js';
 import { handleCors, json, requireAuth, addXP, XP_REWARDS } from '../../lib/middleware.js';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 /**
  * POST /api/quiz/generate
  * body: { topic, difficulty?: 'easy'|'medium'|'hard', count?: 5|10 }
- * → Generates quiz questions via Claude AI
- *
- * POST /api/quiz/submit
- * body: { topic, questions, answers, score, total }
- * → Saves attempt, awards XP
- *
- * GET /api/quiz/history
- * → Returns user's quiz attempt history
+ * → Generates quiz questions via Gemini AI
  */
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -22,7 +15,7 @@ export default async function handler(req, res) {
   const ok = await requireAuth(req, res);
   if (!ok) return;
 
-  const action = req.query.action || (req.method === 'GET' ? 'history' : '');
+  const action = (req.method === 'POST' ? req.body?.action : req.query.action) || (req.method === 'GET' ? 'history' : '');
 
   // ── GET: quiz history ─────────────────────────────────────────────
   if (req.method === 'GET') {
@@ -48,45 +41,66 @@ export default async function handler(req, res) {
 
     const prompt = `Generate exactly ${safeCount} multiple-choice quiz questions about "${topic}" at ${difficulty} difficulty level for college students.
 
-Return ONLY a valid JSON array with no extra text, like this:
+Return ONLY a valid JSON array with no extra text or markdown formatting. The output must be parseable by JSON.parse().
+Example format:
 [
   {
     "q": "question text",
     "opts": ["option A", "option B", "option C", "option D"],
     "ans": 0,
-    "exp": "brief explanation of why ans index is correct"
+    "exp": "brief explanation"
   }
 ]
 
 Rules:
-- "ans" is the 0-based index of the correct option
-- All 4 options must be plausible
-- Explanations should be 1-2 sentences
-- Questions should be relevant to a ${req.profile?.course || 'college'} student
-- Mix conceptual and applied questions`;
+- "ans" is the 0-based index of the correct option.
+- Explanations should be 1-2 sentences.`;
 
     try {
-      const message = await anthropic.messages.create({
-        model:      'claude-sonnet-4-20250514',
-        max_tokens: 2048,
-        messages:   [{ role: 'user', content: prompt }],
-      });
+      const modelsToTry = [
+        'gemini-2.0-flash',
+        'gemini-flash-latest',
+        'gemini-pro-latest',
+        'gemini-2.0-flash-lite-001'
+      ];
+      let success = false;
+      let lastError;
+      let questions;
 
-      const raw = message.content[0].text.trim();
+      for (const modelName of modelsToTry) {
+        try {
+          console.log(`Attempting quiz generation with model: ${modelName}...`);
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          const raw = response.text().trim();
 
-      // Strip markdown code fences if present
-      const clean = raw.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-      const questions = JSON.parse(clean);
+          const clean = raw.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim();
+          questions = JSON.parse(clean);
 
-      if (!Array.isArray(questions) || questions.length === 0) {
-        throw new Error('Invalid questions format');
+          if (Array.isArray(questions) && questions.length > 0) {
+            success = true;
+            console.log(`Successfully generated quiz using ${modelName}`);
+            break;
+          }
+        } catch (err) {
+          console.warn(`Model ${modelName} failed:`, err.message);
+          lastError = err;
+        }
+      }
+
+      if (!success) {
+        throw new Error(lastError?.message || 'All Gemini models failed to generate content.');
       }
 
       return json(res, 200, { questions, topic, difficulty });
 
     } catch (err) {
-      console.error('AI quiz generation error:', err);
-      return json(res, 500, { error: 'Failed to generate quiz. Please try again.' });
+      console.error('Gemini quiz generation error:', err);
+      return json(res, 500, { 
+        error: 'Failed to generate quiz with Gemini.',
+        details: err.message
+      });
     }
   }
 

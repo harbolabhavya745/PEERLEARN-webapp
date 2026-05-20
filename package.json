@@ -7,8 +7,9 @@
     "build": "echo 'No build step needed'"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.20.0",
+    "@google/generative-ai": "^0.11.0",
     "@supabase/supabase-js": "^2.43.0",
+    "node-fetch": "^3.3.2",
     "razorpay": "^2.9.2",
     "supabase": "^2.98.2"
   },

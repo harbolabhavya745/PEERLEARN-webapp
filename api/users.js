@@ -160,5 +160,19 @@ export default async function handler(req, res) {
     });
   }
 
+  // ── GET /api/users/leaderboard ────────────────────────────────────
+  if (url === '/api/users/leaderboard' && req.method === 'GET') {
+    const { limit = 10 } = req.query;
+
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name, username, avatar_skin, avatar_url, xp, level')
+      .order('xp', { ascending: false })
+      .limit(Number(limit));
+
+    if (error) return json(res, 500, { error: error.message });
+    return json(res, 200, { leaderboard: data });
+  }
+
   return json(res, 404, { error: 'Users route not found' });
 }

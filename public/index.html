@@ -539,13 +539,21 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
           </div>
         </div>
         <div>
-          <div class="card mb16" style="margin-bottom:14px">
+          <div class="card mb16">
             <h3 class="mb8">Trending Topics</h3>
             <div id="trending-topics">
               <span class="trending-tag">#DataStructures</span>
               <span class="trending-tag">#DBMS</span>
               <span class="trending-tag">#Calculus</span>
               <span class="trending-tag">#OOP</span>
+            </div>
+          </div>
+          <div class="card mb16">
+            <h3 class="mb12">Top Students</h3>
+            <div class="flex fc gap8" id="leaderboard-list">
+              <div style="padding:10px;text-align:center;color:var(--text3);font-size:12px">
+                Loading leaderboard...
+              </div>
             </div>
           </div>
           <div class="card">
@@ -708,34 +716,28 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
           <h2 style="margin-bottom:6px">AI-Powered Quiz Engine</h2>
           <p style="color:var(--text2)">Adaptive questions tailored to your level. Earn XP and climb the leaderboard.</p>
         </div>
-        <h3 class="mb12">Choose a Topic</h3>
-        <div class="quiz-topic-grid mb20">
-          <div class="topic-card" onclick="startQuiz('Data Structures & Algorithms')"><div class="topic-icon">🌲</div><div class="topic-name">Data Structures</div><div style="font-size:11px;color:var(--text3);margin-top:4px">47 questions</div></div>
-          <div class="topic-card" onclick="startQuiz('Calculus')"><div class="topic-icon">∫</div><div class="topic-name">Calculus</div><div style="font-size:11px;color:var(--text3);margin-top:4px">35 questions</div></div>
-          <div class="topic-card" onclick="startQuiz('Database Management')"><div class="topic-icon">🗄️</div><div class="topic-name">DBMS</div><div style="font-size:11px;color:var(--text3);margin-top:4px">29 questions</div></div>
-          <div class="topic-card" onclick="startQuiz('Python Programming')"><div class="topic-icon">🐍</div><div class="topic-name">Python</div><div style="font-size:11px;color:var(--text3);margin-top:4px">52 questions</div></div>
-          <div class="topic-card" onclick="startQuiz('Operating Systems')"><div class="topic-icon">💻</div><div class="topic-name">OS Concepts</div><div style="font-size:11px;color:var(--text3);margin-top:4px">31 questions</div></div>
-          <div class="topic-card" onclick="startQuiz('Physics')"><div class="topic-icon">⚛️</div><div class="topic-name">Physics</div><div style="font-size:11px;color:var(--text3);margin-top:4px">40 questions</div></div>
+
+        <div class="card mb20" style="padding:16px">
+          <h3 class="mb12">Start a New Quiz</h3>
+          <div class="flex gap10">
+            <input type="text" id="custom-topic-input" placeholder="Enter any topic (e.g. Quantum Physics, React Hooks...)" style="flex:1;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:14px">
+            <button class="btn btn-accent" onclick="startQuiz(document.getElementById('custom-topic-input').value)">Generate</button>
+          </div>
         </div>
-        <div class="g2">
-          <div class="card">
-            <h3 class="mb12">Your Best Scores</h3>
-            <div class="flex fc gap8">
-              <div class="flex aic jb" style="font-size:13px"><span>🌲 Data Structures</span><span class="badge bg">92%</span></div>
-              <div class="flex aic jb" style="font-size:13px"><span>🐍 Python</span><span class="badge bc">88%</span></div>
-              <div class="flex aic jb" style="font-size:13px"><span>🗄️ DBMS</span><span class="badge bp">76%</span></div>
-              <div class="flex aic jb" style="font-size:13px"><span>∫ Calculus</span><span class="badge bo">71%</span></div>
-            </div>
-          </div>
-          <div class="card">
-            <h3 class="mb12">Leaderboard</h3>
-            <div class="flex fc gap8">
-              <div class="flex aic gap10" style="font-size:13px"><span style="color:var(--gold);width:20px">🥇</span><span style="flex:1;color:var(--text)">Riya Patel</span><span style="color:var(--text2)">2,840 XP</span></div>
-              <div class="flex aic gap10" style="font-size:13px"><span style="color:var(--text3);width:20px">🥈</span><span style="flex:1;color:var(--text)">Kabir Singh</span><span style="color:var(--text2)">2,310 XP</span></div>
-              <div class="flex aic gap10" style="font-size:13px;background:rgba(99,102,241,.06);padding:4px 8px;border-radius:8px"><span style="color:var(--accent);width:20px">#4</span><span style="flex:1;color:var(--text)">You</span><span style="color:var(--accent);font-weight:700">1,240 XP</span></div>
-              <div class="flex aic gap10" style="font-size:13px"><span style="color:var(--text3);width:20px">#5</span><span style="flex:1;color:var(--text)">Sneha M.</span><span style="color:var(--text2)">1,190 XP</span></div>
-            </div>
-          </div>
+
+        <h3 class="mb12">Popular Topics</h3>
+        <div class="quiz-topic-grid mb20">
+          <div class="topic-card" onclick="startQuiz('Data Structures & Algorithms')"><div class="topic-icon">🌲</div><div class="topic-name">Data Structures</div><div style="font-size:11px;color:var(--text3);margin-top:4px">AI Generated</div></div>
+          <div class="topic-card" onclick="startQuiz('Calculus')"><div class="topic-icon">∫</div><div class="topic-name">Calculus</div><div style="font-size:11px;color:var(--text3);margin-top:4px">AI Generated</div></div>
+          <div class="topic-card" onclick="startQuiz('Database Management')"><div class="topic-icon">🗄️</div><div class="topic-name">DBMS</div><div style="font-size:11px;color:var(--text3);margin-top:4px">AI Generated</div></div>
+          <div class="topic-card" onclick="startQuiz('Python Programming')"><div class="topic-icon">🐍</div><div class="topic-name">Python</div><div style="font-size:11px;color:var(--text3);margin-top:4px">AI Generated</div></div>
+          <div class="topic-card" onclick="startQuiz('Operating Systems')"><div class="topic-icon">💻</div><div class="topic-name">OS Concepts</div><div style="font-size:11px;color:var(--text3);margin-top:4px">AI Generated</div></div>
+          <div class="topic-card" onclick="startQuiz('Physics')"><div class="topic-icon">⚛️</div><div class="topic-name">Physics</div><div style="font-size:11px;color:var(--text3);margin-top:4px">AI Generated</div></div>
+        </div>
+
+        <h3 class="mb12">Recent Attempts</h3>
+        <div id="quiz-history-list" class="flex flex-col gap8">
+          <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No attempts yet. Start your first quiz!</div>
         </div>
       </div>
       <div id="quiz-active" class="hidden">
@@ -761,7 +763,8 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
             <h2 style="margin-bottom:8px">Quiz Complete!</h2>
             <p class="mb16" style="color:var(--text2)">Great job! You earned <strong style="color:var(--gold)">+80 XP</strong></p>
             <div class="flex gap10" style="justify-content:center">
-              <button class="btn btn-green" onclick="backToQuizHome()"><i class="ti ti-refresh"></i> Try Again</button>
+              <button class="btn btn-green" onclick="startQuiz(quizTopic)"><i class="ti ti-refresh"></i> Retake Quiz</button>
+              <button class="btn btn-accent" onclick="backToQuizHome()"><i class="ti ti-brain"></i> Quiz Home</button>
               <button class="btn btn-ghost" onclick="showPage('home',document.getElementById('nav-home'))"><i class="ti ti-home"></i> Dashboard</button>
             </div>
           </div>
@@ -1021,7 +1024,7 @@ function setupGlobalChatListener() {
   globalChatSubscription = supabaseClient
     .channel('global-chat')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-      console.log('🔔 New Message Detected:', payload.new.id);
+      console.log('⚡ Real-time Sync triggered! New message:', payload.new.id);
       
       // Update sidebar
       loadConversations();
@@ -1083,7 +1086,10 @@ async function apiCall(endpoint, method = 'GET', body = null) {
     }
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Something went wrong');
+    if (!res.ok) {
+      const msg = data.details ? `${data.error} (${data.details})` : (data.error || 'Something went wrong');
+      throw new Error(msg);
+    }
     return data;
   } catch (err) {
     console.error(`API Error [${endpoint}]:`, err);
@@ -1156,11 +1162,41 @@ async function loadInitialData() {
     updateUIWithUserData();
     loadDashboardData();
     loadSuggestedPeers();
+    loadLeaderboard();
     loadSkins();
     loadConversations();
   } catch (err) {
     console.error('Failed to load user data:', err);
     logout();
+  }
+}
+
+async function loadLeaderboard() {
+  try {
+    const data = await apiCall('/api/users/leaderboard?limit=5');
+    const container = document.getElementById('leaderboard-list');
+    if (!container) return;
+
+    if (!data.leaderboard || data.leaderboard.length === 0) {
+      container.innerHTML = '<div style="padding:10px;text-align:center;color:var(--text3);font-size:12px">No users found.</div>';
+      return;
+    }
+
+    container.innerHTML = data.leaderboard.map((u, i) => `
+      <div class="flex aic jb" style="padding:4px 0">
+        <div class="flex aic gap8">
+          <div style="font-size:12px;font-weight:700;color:var(--text3);width:20px">${i + 1}</div>
+          <div class="chat-ava" style="width:28px;height:28px;font-size:14px;background:var(--bg3)">${u.avatar_skin || u.full_name[0]}</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">${u.full_name}</div>
+            <div style="font-size:10px;color:var(--text3)">Lvl ${u.level}</div>
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:var(--purple)">${u.xp.toLocaleString()} XP</div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Failed to load leaderboard:', err);
   }
 }
 
@@ -1497,6 +1533,11 @@ function showPage(id,navEl){
   if(navEl)navEl.classList.add('active');
   const titles={home:'Dashboard',profile:'Profile & Skins',quiz:'AI Quizzes',premium:'Premium Plans',chat:'Peer Chat',call:'Voice / Video Call'};
   document.getElementById('topbar-title').textContent=titles[id]||id;
+
+  if (id === 'quiz') {
+    backToQuizHome(); // Ensure we always start at the topic list
+    loadQuizHistory();
+  }
 }
 function setMobileNav(el){
   document.querySelectorAll('.mobile-nav-btn').forEach(b=>b.classList.remove('active'));
@@ -1545,12 +1586,14 @@ async function selectFrame(el,color,extra){
 }
 
 // ── QUIZ ENGINE ──
-let currentQuizId = null;
 let currentQuestions = [];
 let userAnswers = [];
 let quizTopic = '';
+let score = 0;
+let currentQ = 0;
 
 async function startQuiz(topic) {
+  if (!topic) return alert('Please enter a topic');
   quizTopic = topic;
   document.getElementById('quiz-home').classList.add('hidden');
   document.getElementById('quiz-active').classList.remove('hidden');
@@ -1558,10 +1601,13 @@ async function startQuiz(topic) {
   
   document.getElementById('q-text').textContent = "AI is generating your quiz...";
   document.getElementById('q-options').innerHTML = '<div class="ti ti-loader spin" style="font-size:24px;margin:20px auto;display:block"></div>';
+  document.getElementById('q-feedback').classList.add('hidden');
+  document.getElementById('next-btn').classList.add('hidden');
+  document.getElementById('q-fill').style.width = '0%';
+  document.getElementById('q-counter').textContent = 'Generating...';
 
   try {
     const data = await apiCall('/api/quiz', 'POST', { action: 'generate', topic });
-    currentQuizId = data.quiz_id;
     currentQuestions = data.questions;
     currentQ = 0;
     score = 0;
@@ -1577,12 +1623,12 @@ function renderQuestion() {
   const q = currentQuestions[currentQ];
   document.getElementById('q-counter').textContent = `Q ${currentQ + 1} / ${currentQuestions.length}`;
   document.getElementById('q-fill').style.width = ((currentQ + 1) / currentQuestions.length * 100) + '%';
-  document.getElementById('q-text').textContent = q.question;
+  document.getElementById('q-text').textContent = q.q;
   document.getElementById('q-feedback').classList.add('hidden');
   document.getElementById('next-btn').classList.add('hidden');
   
   const letters = ['A', 'B', 'C', 'D'];
-  document.getElementById('q-options').innerHTML = q.options.map((o, i) => `
+  document.getElementById('q-options').innerHTML = q.opts.map((o, i) => `
     <button class="q-opt" onclick="answerQ(this, ${i})">
       <span class="opt-letter">${letters[i]}</span>${o}
     </button>`).join('');
@@ -1590,22 +1636,22 @@ function renderQuestion() {
 
 function answerQ(el, idx) {
   const q = currentQuestions[currentQ];
-  userAnswers[currentQ] = q.options[idx];
+  userAnswers[currentQ] = idx;
   
   document.querySelectorAll('.q-opt').forEach(b => b.setAttribute('disabled', ''));
   
-  const isCorrect = userAnswers[currentQ] === q.answer;
+  const isCorrect = idx === q.ans;
   const fb = document.getElementById('q-feedback');
   
   if (isCorrect) {
     score++;
     el.classList.add('correct');
     fb.className = 'q-feedback q-fb-correct';
-    fb.innerHTML = `<i class="ti ti-check"></i> Correct!`;
+    fb.innerHTML = `<i class="ti ti-check"></i> Correct! ${q.exp || ''}`;
   } else {
     el.classList.add('wrong');
     fb.className = 'q-feedback q-fb-wrong';
-    fb.innerHTML = `<i class="ti ti-x"></i> The correct answer was: ${q.answer}`;
+    fb.innerHTML = `<i class="ti ti-x"></i> The correct answer was: ${q.opts[q.ans]}. ${q.exp || ''}`;
   }
   
   fb.classList.remove('hidden');
@@ -1628,31 +1674,75 @@ async function nextQuestion() {
 }
 
 async function submitQuiz() {
-  document.getElementById('quiz-active').innerHTML = '<div style="padding:40px;text-align:center"><div class="ti ti-loader spin" style="font-size:32px;margin-bottom:12px"></div><div>Submitting results...</div></div>';
+  const activeBox = document.getElementById('quiz-active');
+  
+  // Hide the feedback and next button immediately so they don't reappear when we restore HTML
+  document.getElementById('q-feedback').classList.add('hidden');
+  document.getElementById('next-btn').classList.add('hidden');
+
+  const originalContent = activeBox.innerHTML;
+  activeBox.innerHTML = '<div style="padding:40px;text-align:center"><div class="ti ti-loader spin" style="font-size:32px;margin-bottom:12px"></div><div>Submitting results...</div></div>';
   
   try {
     const result = await apiCall('/api/quiz', 'POST', {
       action: 'submit',
-      quiz_id: currentQuizId,
-      answers: userAnswers
+      topic: quizTopic,
+      questions: currentQuestions,
+      answers: userAnswers,
+      score: score,
+      total: currentQuestions.length
     });
     
+    activeBox.innerHTML = originalContent; // Restore clean state
     document.getElementById('quiz-active').classList.add('hidden');
     document.getElementById('quiz-result').classList.remove('hidden');
-    document.getElementById('result-score').textContent = `${result.score}/${currentQuestions.length}`;
+    document.getElementById('result-score').textContent = `${score}/${currentQuestions.length}`;
     
+    const oldXp = document.getElementById('quiz-xp-earned');
+    if (oldXp) oldXp.remove();
+
     const xpNotice = document.createElement('div');
+    xpNotice.id = 'quiz-xp-earned';
     xpNotice.style.color = 'var(--green)';
     xpNotice.style.fontWeight = '700';
     xpNotice.style.marginTop = '10px';
     xpNotice.textContent = `+${result.xp_earned} XP Gained!`;
     document.getElementById('quiz-result').appendChild(xpNotice);
     
-    // Refresh user data to show new XP
     loadInitialData();
+    loadQuizHistory();
   } catch (err) {
     alert(err.message);
+    activeBox.innerHTML = originalContent;
     backToQuizHome();
+  }
+}
+
+async function loadQuizHistory() {
+  try {
+    const data = await apiCall('/api/quiz', 'GET');
+    const container = document.getElementById('quiz-history-list');
+    if (!container) return;
+
+    if (!data.attempts || data.attempts.length === 0) {
+      container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">No attempts yet. Start your first quiz!</div>';
+      return;
+    }
+
+    container.innerHTML = data.attempts.map(a => `
+      <div class="card flex aic jb" style="padding:12px 16px">
+        <div>
+          <div style="font-weight:600;font-size:14px">${a.topic}</div>
+          <div style="font-size:11px;color:var(--text3)">${new Date(a.created_at).toLocaleDateString()} • ${a.score}/${a.total} Correct</div>
+        </div>
+        <div style="text-align:right">
+          <div style="color:var(--green);font-weight:700;font-size:13px">+${a.xp_earned} XP</div>
+          <div style="font-size:10px;color:var(--text3)">Earned</div>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    console.error('Failed to load quiz history:', err);
   }
 }
 
@@ -1660,6 +1750,7 @@ function backToQuizHome() {
   document.getElementById('quiz-active').classList.add('hidden');
   document.getElementById('quiz-result').classList.add('hidden');
   document.getElementById('quiz-home').classList.remove('hidden');
+  loadQuizHistory();
 }
 
 // ── CHAT ──
@@ -1714,9 +1805,12 @@ async function refreshActiveChat() {
       </div>
     `).join('');
     
-    // Only update if content changed to avoid flicker
-    if (msgsContainer.innerHTML !== html) {
-      msgsContainer.innerHTML = html;
+    // Always update to ensure sync, scroll only if we added content
+    const wasAtBottom = msgsContainer.scrollHeight - msgsContainer.scrollTop <= msgsContainer.clientHeight + 50;
+    
+    msgsContainer.innerHTML = html;
+    
+    if (wasAtBottom) {
       msgsContainer.scrollTop = msgsContainer.scrollHeight;
     }
   } catch (err) {
@@ -1816,20 +1910,28 @@ async function openConversation(id, name, skin) {
   }
 }
 
-// Polling fallback (runs every 5 seconds to ensure UI stays in sync)
+// Polling fallback (runs every 2.5 seconds to ensure UI stays in sync)
 let _lastConvSnapshot = '';
 setInterval(async () => {
   if (currentToken) {
+    console.log('🔄 Polling Sync...');
     const chatPageActive = document.getElementById('p-chat')?.classList.contains('active');
     // Capture pre-refresh state to detect new messages
     const prevSnapshot = _lastConvSnapshot;
+    
     await loadConversations();
+    
+    // Refresh active chat window if it's open
+    if (activeConversationId) {
+      refreshActiveChat();
+    }
+
     // If chat page is NOT active and conversations changed, show unread dot
     if (!chatPageActive && _lastConvSnapshot && prevSnapshot && _lastConvSnapshot !== prevSnapshot) {
       showChatUnreadDot();
     }
   }
-}, 5000);
+}, 2500);
 
 function appendMessage(m, type) {
   const msgsContainer = document.getElementById('chat-messages');
