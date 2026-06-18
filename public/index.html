@@ -83,6 +83,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
 .g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 .g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
 .flex{display:flex}.fc{flex-direction:column}.aic{align-items:center}.jb{justify-content:space-between}
+.mt16{margin-top:16px}
 .gap4{gap:4px}.gap8{gap:8px}.gap12{gap:12px}.gap16{gap:16px}
 .mb4{margin-bottom:4px}.mb8{margin-bottom:8px}.mb12{margin-bottom:12px}.mb16{margin-bottom:16px}.mb20{margin-bottom:20px}.mb24{margin-bottom:24px}.mb32{margin-bottom:32px}
 
@@ -487,6 +488,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
     <button class="nav-btn" id="nav-premium" onclick="showPage('premium',this)"><i class="ti ti-crown"></i><span class="tip">Premium</span></button>
     <button class="nav-btn" id="nav-chat" onclick="showPage('chat',this)"><i class="ti ti-message-circle"></i><span class="tip">Chat</span></button>
     <button class="nav-btn" id="nav-call" onclick="showPage('call',this)"><i class="ti ti-video"></i><span class="tip">Voice / Video</span></button>
+    <button class="nav-btn" id="nav-notion" onclick="showPage('notion',this)"><i class="ti ti-calendar-event"></i><span class="tip">Notion Sync</span></button>
     <div class="nav-spacer"></div>
     <button class="dark-toggle" id="sidebar-dark-btn" onclick="toggleDark()"><i class="ti ti-moon" id="sidebar-dark-icon"></i><span class="tip" id="sidebar-dark-tip">Dark Mode</span></button>
     <div class="nav-avatar" onclick="showPage('profile',document.getElementById('nav-profile'))">A</div>
@@ -498,7 +500,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
       <div class="topbar-right">
         <span class="badge bg"><i class="ti ti-bolt"></i> 1,240 XP</span>
         <span class="badge bo"><i class="ti ti-crown"></i> Free</span>
-        <button class="btn btn-ghost btn-sm" onclick="showPage('premium',document.getElementById('nav-premium'))"><i class="ti ti-sparkles"></i> Upgrade</button>
+        <button id="topbar-upgrade-btn" class="btn btn-ghost btn-sm" onclick="showPage('premium',document.getElementById('nav-premium'))"><i class="ti ti-sparkles"></i> Upgrade</button>
         <button class="dark-toggle" onclick="toggleDark()" title="Toggle dark mode" style="width:34px;height:34px;border-radius:8px"><i class="ti ti-moon" id="topbar-dark-icon"></i></button>
       </div>
     </div>
@@ -791,7 +793,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
           <div class="plan-feature no"><i class="ti ti-x"></i> Video calls</div>
           <div class="plan-feature no"><i class="ti ti-x"></i> AI doubt solving</div>
           <div class="plan-feature no"><i class="ti ti-x"></i> Premium skins</div>
-          <button class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:16px">Current Plan</button>
+          <button id="btn-plan-free" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:16px">Current Plan</button>
         </div>
         <div class="plan-card featured">
           <div class="plan-crown">⭐ Most Popular</div>
@@ -804,7 +806,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
           <div class="plan-feature"><i class="ti ti-check"></i> AI doubt solving</div>
           <div class="plan-feature"><i class="ti ti-check"></i> Priority peer matching</div>
           <div class="plan-feature"><i class="ti ti-check"></i> Study groups (up to 20)</div>
-          <button class="btn btn-gold" style="width:100%;justify-content:center;margin-top:16px" onclick="showUpgradeModal()"><i class="ti ti-crown"></i> Upgrade to Pro</button>
+          <button id="btn-plan-pro" class="btn btn-gold" style="width:100%;justify-content:center;margin-top:16px" onclick="showUpgradeModal()"><i class="ti ti-crown"></i> Upgrade to Pro</button>
         </div>
         <div class="plan-card">
           <span class="badge bp mb8">Elite</span>
@@ -816,7 +818,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
           <div class="plan-feature"><i class="ti ti-check"></i> 1:1 mentor matching</div>
           <div class="plan-feature"><i class="ti ti-check"></i> Verified expert badge</div>
           <div class="plan-feature"><i class="ti ti-check"></i> Analytics dashboard</div>
-          <button class="btn btn-purple" style="width:100%;justify-content:center;margin-top:16px" onclick="showUpgradeModal()"><i class="ti ti-sparkles"></i> Go Elite</button>
+          <button id="btn-plan-elite" class="btn btn-purple" style="width:100%;justify-content:center;margin-top:16px" onclick="showUpgradeModal()"><i class="ti ti-sparkles"></i> Go Elite</button>
         </div>
       </div>
       <div class="card" style="text-align:center">
@@ -918,6 +920,50 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
       </div>
     </div>
 
+    <!-- NOTION PAGE -->
+    <div id="p-notion" class="page" style="padding:24px">
+      <div class="topbar-title" style="margin-bottom:20px">Notion Integration</div>
+      <div class="card mb20">
+        <h3>Shared Notes Wiki</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Sync your study notes directly to your Notion Database.</p>
+        <div class="g2 mb12">
+          <input type="text" id="notion-note-title" placeholder="Note Title">
+          <input type="text" id="notion-note-subject" placeholder="Subject">
+        </div>
+        <textarea id="notion-note-content" placeholder="Write your note here..." rows="4" class="mb12"></textarea>
+        <div class="flex aic gap8 mb12">
+          <input type="checkbox" id="notion-note-public" style="width:auto">
+          <label for="notion-note-public" style="margin:0;font-size:13px">Make note public (view-only)</label>
+        </div>
+        <button class="btn btn-accent" onclick="window.submitNotionNote()"><i class="ti ti-send"></i> Save to Notion</button>
+        <div id="notion-notes-list" class="mt16 flex fc gap8"></div>
+      </div>
+      
+      <div class="card mb20">
+        <h3>Todo List</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Add tasks straight to your Notion Todos.</p>
+        <div class="g3 mb12">
+          <input type="text" id="notion-todo-title" placeholder="Task Name">
+          <select id="notion-todo-status"><option value="Todo">Todo</option><option value="In Progress">In Progress</option><option value="Done">Done</option></select>
+          <input type="date" id="notion-todo-date">
+        </div>
+        <button class="btn btn-green" onclick="window.submitNotionTodo()"><i class="ti ti-check"></i> Add Task</button>
+        <div id="notion-todos-list" class="mt16 flex fc gap8"></div>
+      </div>
+
+      <div class="card">
+        <h3>Event Calendar</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Schedule study sessions on your Notion Calendar.</p>
+        <div class="g3 mb12">
+          <input type="text" id="notion-event-title" placeholder="Event Name">
+          <select id="notion-event-type"><option value="Study Session">Study Session</option><option value="Deadline">Deadline</option></select>
+          <input type="datetime-local" id="notion-event-date">
+        </div>
+        <button class="btn btn-purple" onclick="window.submitNotionEvent()"><i class="ti ti-calendar"></i> Schedule Event</button>
+        <div id="notion-events-list" class="mt16 flex fc gap8"></div>
+      </div>
+    </div>
+
   </div><!-- /main -->
 
   <!-- MOBILE BOTTOM NAV -->
@@ -971,11 +1017,93 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
         <div class="demo-timer-fill" id="demo-timer-fill"></div>
         <div class="demo-progress-fill" id="demo-progress-fill"></div>
       </div>
-      <div class="demo-count-lbl" id="demo-count-lbl">1 / 5</div>
+          <div class="demo-count-lbl" id="demo-count-lbl">1 / 5</div>
     </div>
   </div>
 </div>
 
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script type="module">
+  import { notionApi } from './js/notion.js';
+  window.loadNotionData = async () => {
+    try {
+      const [notesRes, todosRes, eventsRes] = await Promise.all([
+        notionApi.getNotes(),
+        notionApi.getTodos(),
+        notionApi.getEvents()
+      ]);
+
+      document.getElementById('notion-notes-list').innerHTML = notesRes.notes.map(n => `
+        <div class="card-sm">
+          <div class="flex jb mb4"><strong style="font-size:13px">${n.title}</strong><span class="badge bg" style="font-size:10px">${n.subject}</span></div>
+          <div style="font-size:12px;color:var(--text2)">${n.content}</div>
+        </div>
+      `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No notes yet</div>';
+
+      document.getElementById('notion-todos-list').innerHTML = todosRes.todos.map(t => `
+        <div class="card-sm flex aic jb">
+          <div style="font-size:13px;font-weight:600">${t.title}</div>
+          <div class="flex aic gap8">
+            <span class="badge ${t.status==='Done'?'bg':'bc'}" style="font-size:10px">${t.status}</span>
+            <span style="font-size:11px;color:var(--text3)">${t.due_date || ''}</span>
+          </div>
+        </div>
+      `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No tasks yet</div>';
+
+      document.getElementById('notion-events-list').innerHTML = eventsRes.events.map(e => `
+        <div class="card-sm">
+          <div class="flex jb mb4"><strong style="font-size:13px">${e.title}</strong><span class="badge bp" style="font-size:10px">${e.event_type}</span></div>
+          <div style="font-size:11px;color:var(--text3)">${new Date(e.date).toLocaleString()}</div>
+        </div>
+      `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No events yet</div>';
+    } catch (e) { console.error("Failed to load Notion data", e); }
+  };
+
+  window.submitNotionNote = async () => {
+    const t = document.getElementById('notion-note-title').value;
+    const s = document.getElementById('notion-note-subject').value;
+    const c = document.getElementById('notion-note-content').value;
+    const pub = document.getElementById('notion-note-public').checked;
+    if(!t || !c) return alert("Title and Content required");
+    try { 
+      await notionApi.createNote(t, c, s, pub); 
+      alert("Note synced to Notion!"); 
+      window.loadNotionData();
+      document.getElementById('notion-note-title').value = '';
+      document.getElementById('notion-note-content').value = '';
+    }
+    catch (e) { alert(e.message); }
+  };
+  window.submitNotionTodo = async () => {
+    const t = document.getElementById('notion-todo-title').value;
+    const s = document.getElementById('notion-todo-status').value;
+    const d = document.getElementById('notion-todo-date').value;
+    if(!t) return alert("Task name required");
+    try { 
+      await notionApi.createTodo(t, s, d); 
+      alert("Task synced to Notion!"); 
+      window.loadNotionData();
+      document.getElementById('notion-todo-title').value = '';
+    }
+    catch (e) { alert(e.message); }
+  };
+  window.submitNotionEvent = async () => {
+    const t = document.getElementById('notion-event-title').value;
+    const ty = document.getElementById('notion-event-type').value;
+    const d = document.getElementById('notion-event-date').value;
+    if(!t || !d) return alert("Event name and date required");
+    try { 
+      await notionApi.createEvent(t, ty, d); 
+      alert("Event synced to Notion!"); 
+      window.loadNotionData();
+      document.getElementById('notion-event-title').value = '';
+    }
+    catch (e) { alert(e.message); }
+  };
+</script>
+
+<script src="js/config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 // ── CORE STATE & API ──
@@ -984,8 +1112,8 @@ let currentToken = localStorage.getItem('peerlearn_token');
 let isLoggingIn = false;
 
 // Initialize Supabase for Realtime
-const SUPABASE_URL = 'https://gornehhkjickglfnobvl.supabase.co';
-const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdvcm5laGhramlja2dsZm5vYnZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTIxMjMsImV4cCI6MjA5NDUyODEyM30.J5pyX0PBWUwys5xw8xGhyX5ywiPl837sB1lDCJ3vpUw';
+const SUPABASE_URL = window.CONFIG.SUPABASE_URL;
+const SUPABASE_ANON = window.CONFIG.SUPABASE_ANON_KEY;
 let supabaseClient = null;
 let globalChatSubscription = null;
 
@@ -1308,10 +1436,47 @@ function updateUIWithUserData() {
   if (xpBadge) xpBadge.innerHTML = `<i class="ti ti-bolt"></i> ${currentUser.xp || 0} XP`;
 
   const planBadge = document.querySelector('.topbar-right .badge.bo');
+  const upgradeBtn = document.getElementById('topbar-upgrade-btn');
   if (planBadge) {
     const plan = currentUser.plan || 'free';
     planBadge.innerHTML = `<i class="ti ti-crown"></i> ${plan.charAt(0).toUpperCase() + plan.slice(1)}`;
+    if (upgradeBtn) upgradeBtn.classList.toggle('hidden', plan !== 'free');
   }
+
+  // Update Premium Page Buttons
+  const currentPlan = currentUser.plan || 'free';
+  const planConfigs = {
+    free:  { text: 'Current Plan', class: 'btn btn-ghost', icon: '', onclick: null },
+    pro:   { text: 'Upgrade to Pro', class: 'btn btn-gold', icon: 'ti ti-crown', onclick: 'showUpgradeModal()' },
+    elite: { text: 'Go Elite', class: 'btn btn-purple', icon: 'ti ti-sparkles', onclick: 'showUpgradeModal()' }
+  };
+
+  ['free', 'pro', 'elite'].forEach(p => {
+    const btn = document.getElementById(`btn-plan-${p}`);
+    if (btn) {
+      if (p === currentPlan) {
+        btn.textContent = 'Current Plan';
+        btn.className = 'btn btn-ghost';
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+        btn.removeAttribute('onclick');
+      } else {
+        const config = planConfigs[p];
+        btn.innerHTML = config.icon ? `<i class="${config.icon}"></i> ${config.text}` : config.text;
+        btn.className = config.class;
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        if (config.onclick) btn.setAttribute('onclick', config.onclick);
+        
+        // If they are on Pro, don't let them "upgrade" to Free
+        if (currentPlan !== 'free' && p === 'free') {
+          btn.textContent = 'Basic Plan';
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+        }
+      }
+    }
+  });
 
   // Update Profile Page
   const profName = document.getElementById('profile-full-name');
@@ -1493,6 +1658,9 @@ function showPage(id,navEl){
   if (id === 'quiz') {
     backToQuizHome(); // Ensure we always start at the topic list
     loadQuizHistory();
+  }
+  if (id === 'notion') {
+    window.loadNotionData?.();
   }
 }
 function setMobileNav(el){

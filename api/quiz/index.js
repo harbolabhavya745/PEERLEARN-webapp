@@ -58,6 +58,7 @@ Rules:
 
     try {
       const modelsToTry = [
+        'gemini-1.5-flash',
         'gemini-2.0-flash',
         'gemini-flash-latest',
         'gemini-pro-latest',
@@ -66,6 +67,7 @@ Rules:
       let success = false;
       let lastError;
       let questions;
+      let isQuotaExceeded = false;
 
       for (const modelName of modelsToTry) {
         try {
@@ -86,11 +88,18 @@ Rules:
         } catch (err) {
           console.warn(`Model ${modelName} failed:`, err.message);
           lastError = err;
+          if (err.message.includes('429') || err.message.toLowerCase().includes('quota')) {
+            isQuotaExceeded = true;
+          }
         }
       }
 
       if (!success) {
-        throw new Error(lastError?.message || 'All Gemini models failed to generate content.');
+        const statusCode = isQuotaExceeded ? 429 : 500;
+        return json(res, statusCode, { 
+          error: isQuotaExceeded ? 'Gemini API quota exceeded. Please try again later.' : 'Failed to generate quiz.',
+          details: lastError?.message 
+        });
       }
 
       return json(res, 200, { questions, topic, difficulty });

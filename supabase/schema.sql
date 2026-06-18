@@ -289,3 +289,51 @@ CREATE POLICY "Users view own activities"       ON public.activities FOR SELECT 
 -- OR run:
 ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.activities;
+
+-- ─────────────────────────────────────
+--  NOTION INTEGRATION TABLES
+-- ─────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.study_notes (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  author_id   UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  title       TEXT NOT NULL,
+  content     TEXT NOT NULL,
+  subject     TEXT,
+  is_public   BOOLEAN DEFAULT FALSE,
+  notion_page_id TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.todos (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  author_id   UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  title       TEXT NOT NULL,
+  status      TEXT DEFAULT 'Todo' CHECK (status IN ('Todo','In Progress','Done')),
+  due_date    DATE,
+  notion_page_id TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS public.events (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  author_id   UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  title       TEXT NOT NULL,
+  event_type  TEXT,
+  date        TIMESTAMPTZ,
+  notion_page_id TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.study_notes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.todos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users view own or public study_notes" ON public.study_notes FOR SELECT USING (auth.uid() = author_id OR is_public = true);
+CREATE POLICY "Users manage own study_notes" ON public.study_notes FOR ALL USING (auth.uid() = author_id);
+
+CREATE POLICY "Users view own todos" ON public.todos FOR SELECT USING (auth.uid() = author_id);
+CREATE POLICY "Users manage own todos" ON public.todos FOR ALL USING (auth.uid() = author_id);
+
+CREATE POLICY "Users view own events" ON public.events FOR SELECT USING (auth.uid() = author_id);
+CREATE POLICY "Users manage own events" ON public.events FOR ALL USING (auth.uid() = author_id);
+
