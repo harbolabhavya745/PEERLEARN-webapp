@@ -58,8 +58,7 @@ Rules:
 - Explanations should be 1-2 sentences.`;
 
       const modelsToTry = [
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-8b'
+        'gemini-flash-latest'
       ];
       let success = false;
       let lastError;

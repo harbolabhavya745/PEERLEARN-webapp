@@ -1,12 +1,49 @@
 import { handleCors, json, requireAuth } from '../lib/middleware.js';
 import { supabaseAdmin } from '../lib/supabase.js';
-import { getNotionClient, requireNotion, createDatabases } from '../lib/notion.js';
+import { getNotionClient, requireNotion, createDatabases, syncUserNotion } from '../lib/notion.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
 
   const url = req.url.split('?')[0];
   const baseUrl = (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
+
+  // ── CRON SYNC JOB (NO USER AUTH REQUIRED, VERIFIES CRON_SECRET) ──
+  if (url === '/api/notion-sync' || url === '/api/notion/cron-sync') {
+    if (req.headers['authorization'] !== `Bearer ${process.env.CRON_SECRET}`) {
+      return json(res, 401, { error: 'Unauthorized' });
+    }
+
+    const { data: users } = await supabaseAdmin.from('profiles')
+      .select('id, notion_token, notion_todos_db_id, notion_events_db_id, notion_notes_db_id, notion_last_synced_at')
+      .not('notion_token', 'is', null);
+
+    if (!users) return json(res, 200, { synced: 0 });
+
+    for (const user of users) {
+      try {
+        await syncUserNotion(user);
+      } catch (err) {
+        console.error(`Sync failed for user ${user.id}:`, err.message);
+        if (err.status === 401) {
+          await supabaseAdmin.from('profiles').update({
+            notion_token: null,
+            notion_workspace_id: null,
+            notion_workspace_name: null,
+            notion_bot_id: null,
+            notion_parent_page_id: null,
+            notion_todos_db_id: null,
+            notion_events_db_id: null,
+            notion_notes_db_id: null,
+            notion_connected_at: null,
+            notion_last_synced_at: null
+          }).eq('id', user.id);
+        }
+      }
+    }
+
+    return json(res, 200, { synced: users.length });
+  }
 
   // ── OAUTH CALLBACK (NO AUTH REQUIRED) ────────────────────────
   if (url === '/api/notion/callback' && req.method === 'GET') {
