@@ -175,11 +175,13 @@ CREATE TABLE IF NOT EXISTS public.skins (
 -- Seed default skins
 INSERT INTO public.skins (key, name, emoji, color, rarity, required_plan, xp_required) VALUES
   ('default',     'Scholar',      '🧑‍💻', '#6366f1', 'common',    'free',  0),
+  ('scientist',   'Scientist',    '🧑‍🔬', '#db2777', 'common',    'free',  0),
+  ('artist',      'Artist',       '🎨',  '#f59e0b', 'common',    'free',  0),
   ('neon',        'Neon Ninja',   '🥷',  '#22d3ee', 'common',    'free',  200),
   ('fire',        'Fire Starter', '🔥',  '#f97316', 'rare',      'free',  500),
   ('astro',       'Astronaut',    '🧑‍🚀', '#8b5cf6', 'rare',      'free',  800),
-  ('wizard',      'Wizard',       '🧙',  '#7c3aed', 'epic',      'pro',   0),
-  ('robot',       'Cyber Bot',    '🤖',  '#06b6d4', 'epic',      'pro',   0),
+  ('wizard',      'Wizard',       '🧙',  '#7c3aed', 'epic',      'pro',   300),
+  ('robot',       'Cyber Bot',    '🤖',  '#06b6d4', 'epic',      'pro',   500),
   ('dragon',      'Dragon Lord',  '🐉',  '#dc2626', 'legendary', 'elite', 0),
   ('unicorn',     'Unicorn',      '🦄',  '#ec4899', 'legendary', 'elite', 0)
 ON CONFLICT (key) DO NOTHING;

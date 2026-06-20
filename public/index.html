@@ -1421,17 +1421,45 @@ async function loadSkins() {
         const isOwned = skin.owned;
         const isSelected = currentUser.avatar_skin === skin.emoji;
 
+        // Plan order mapping
+        const planOrder = { free: 0, pro: 1, elite: 2 };
+        const userPlan = currentUser.plan || 'free';
+        const requiredPlan = skin.required_plan || 'free';
+        const hasRequiredPlan = planOrder[userPlan] >= planOrder[requiredPlan];
+
+        let labelText = skin.name;
+        let clickHandler = '';
+
+        if (isOwned) {
+          clickHandler = `applySkin('${skin.emoji}', '${skin.key}')`;
+        } else {
+          if (!hasRequiredPlan) {
+            labelText += ` (🔒 ${requiredPlan.toUpperCase()})`;
+            clickHandler = `promptUpgrade('${requiredPlan}')`;
+          } else {
+            labelText += ` (🔒 ${skin.xp_required} XP)`;
+            clickHandler = `unlockSkin('${skin.key}', ${skin.xp_required})`;
+          }
+        }
+
         return `
           <div class="skin-item ${isSelected ? 'selected' : ''} ${!isOwned ? 'skin-locked' : ''}" 
-               onclick="${isOwned ? `applySkin('${skin.emoji}', '${skin.key}')` : `unlockSkin('${skin.key}', ${skin.xp_required})`}">
+               onclick="${clickHandler}"
+               title="${!isOwned && !hasRequiredPlan ? `Requires ${requiredPlan.toUpperCase()} plan` : ''}">
             <div class="skin-ava" style="background:rgba(99,102,241,.12)">${skin.emoji}</div>
-            <div class="skin-name">${skin.name} ${!isOwned ? `(🔒 ${skin.xp_required} XP)` : ''}</div>
+            <div class="skin-name">${labelText}</div>
           </div>
         `;
       }).join('');
     }
   } catch (err) {
     console.error('Failed to load skins:', err);
+  }
+}
+
+function promptUpgrade(plan) {
+  if (confirm(`This exclusive avatar skin requires a ${plan.toUpperCase()} membership. Would you like to upgrade now?`)) {
+    showPage('premium', document.getElementById('nav-premium'));
   }
 }
 

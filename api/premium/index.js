@@ -104,11 +104,12 @@ export default async function handler(req, res) {
       .update({ plan })
       .eq('id', req.user.id);
 
-    // Unlock plan-specific skins
+    // Unlock plan-specific skins that don't require XP
     const { data: planSkins } = await supabaseAdmin
       .from('skins')
       .select('key')
-      .eq('required_plan', plan);
+      .eq('required_plan', plan)
+      .eq('xp_required', 0);
 
     if (planSkins?.length) {
       await supabaseAdmin.from('user_skins').insert(
