@@ -331,11 +331,12 @@ The Notion workflow uses **per-user Notion OAuth**. Each user connects their own
 **Supabase is the Source of Truth:**
 Unlike the old integration, **data is stored in Supabase tables** (`todos`, `events`, `study_notes`). Whenever a user creates or updates an item in PeerLearn, it is saved to Supabase and simultaneously pushed to their connected Notion workspace.
 
-### Two-Way Sync (Cron)
+### On-Demand Two-Way Sync
 
-A Vercel cron job runs every 10 minutes (`/api/notion-sync`) to provide two-way sync:
-- It polls Notion for pages edited since the `last_synced_at` timestamp.
-- Changes made directly in Notion are pulled back into Supabase.
+Instead of a Vercel cron job (which was restricted by the Hobby plan), synchronization uses a **lazy/on-demand** approach:
+- When the user loads their dashboard, the frontend checks `last_synced_at`.
+- If older than 5 minutes, it calls `/api/notion/sync` in the background.
+- Users can also manually click "Sync Now" to instantly pull changes made directly in Notion back into Supabase.
 - Conflicts are resolved using a "last-write-wins" approach based on timestamps.
 
 ### Notion OAuth Setup Checklist
@@ -488,22 +489,16 @@ Flow:
 
 ## 13. Recent Changes (June 2026)
 
-### Notion Workflow — Supabase Fallback Removed ✅
+### Notion Workflow — Rewritten to Per-User OAuth & Two-Way Sync ✅
 
-**Problem:** `api/notion.js` was treating Notion as an optional enhancement. The old code:
-1. Attempted a Notion API call — but only if env vars were set
-2. Silently caught any Notion error (`try/catch` with only `console.error`)
-3. **Always** inserted data into Supabase regardless of whether Notion succeeded
-4. GET endpoints read **only from Supabase**, never from Notion
+**Problem:** The original Notion integration used a single shared workspace token, meaning all users' data was dumped into the same three databases. It was also purely Notion-backed, making the UI slow and fragile.
 
-This meant the "Notion workflow" was actually a Supabase workflow with a best-effort Notion sync. No data was ever read back from Notion.
-
-**Fix:** Completely rewrote `api/notion.js`:
-- Removed all `import`/usage of `supabaseAdmin`
-- Upfront env var validation — returns `503` if missing (no silent skipping)
-- POST endpoints call Notion `pages.create()` and return the Notion page data directly
-- GET endpoints call Notion `databases.query()` with user-scoped `rich_text` filters
-- Each route validates its specific DB ID env var independently
+**Fix:** Completely overhauled the Notion architecture:
+- Implemented **Per-User OAuth** flow (`/api/notion/oauth` & `/api/notion/callback`).
+- Re-introduced Supabase (`study_notes`, `todos`, `events` tables) as the **Source of Truth** for instant, reliable frontend reads.
+- Posts/Updates are now "dual-written" (saved to Supabase instantly, then pushed to the user's Notion workspace asynchronously).
+- Created a **On-Demand Sync Route** (`/api/notion/sync`) that is triggered automatically when a user visits the dashboard or manually via the UI.
+- Removed old `check_notion.js` and `setup_notion_dbs.js` scripts containing hardcoded API keys.
 
 ### Previous Fixes (earlier in June 2026)
 
@@ -517,7 +512,9 @@ This meant the "Notion workflow" was actually a Supabase workflow with a best-ef
 
 ### Notion Integration Fixes & Discoveries (Late June 2026)
 
-- **Notion SDK Update**: The project uses `@notionhq/client` version `5.22.0`, which introduces breaking changes. `notion.databases.query` is removed; you must use `notion.dataSources.query({ data_source_id: ... })` instead. However, page creation still uses `parent: { database_id: ... }`.
+- **Notion SDK Reversion**: The project was previously using an experimental/broken `@notionhq/client` version `5.22.0` which dropped database schema `properties`. It has been securely downgraded to the stable `2.2.14` release so database creation correctly builds columns.
+- **Search Eventual Consistency**: Added a retry loop to `api/notion.js` when finding a parent page, because Notion's search index is slightly delayed right after a user authorizes OAuth.
+- **Environment Variable Parsing**: Removed inline comments from `.env` (`SITE_URL`) because the Node parser included the comment in the string, breaking the `redirect_uri` check in Notion OAuth.
 - **Status Defaults**: The Notion `Status` property defaults to "Not started", "In progress", and "Done". The frontend dropdowns and backend fallback values were updated to match these exactly (instead of sending "Todo").
 - **Rich Text Filtering**: Notion's `equals` filter on `rich_text` fails silently for UUIDs. It was updated to `contains` in `api/notion.js` for all 3 GET routes.
 - **Database Connectivity**: Make sure the `.env` IDs exactly match the databases the integration is invited to. The integration must be explicitly invited to each database page.
@@ -526,6 +523,9 @@ This meant the "Notion workflow" was actually a Supabase workflow with a best-ef
   - **Notes DB**: `Name` (Title), `Subject` (Select), `Author` (Text).
   - **Events DB**: `Name` (Title), `Event Type` (Select), `Date` (Date), `Organizer` (Text).
   *(Note: The first column must literally be named `Name`, not `Title`)*
+- **Hash-Based Routing for Redirects**: The Notion OAuth callback redirects to `/#notion?connected=true`. The `DOMContentLoaded` listener in `public/index.html` was updated to parse `window.location.hash` and correctly call `showPage` to display the Notion dashboard immediately on load, fixing an issue where the UI wouldn't update after connecting.
+- **Persistent Premium & Notion UI State**: Updated the `updateUIWithUserData()` function in the frontend to permanently hide the "Premium" sidebar item once a user is on a paid plan, and to visually update the "Notion Sync" sidebar icon to a checkmark when Notion is linked. `activatePremium()` was also updated to make a real backend API call saving the plan upgrade to Supabase rather than just a frontend mockup.
+
 
 ---
 
@@ -542,7 +542,7 @@ This meant the "Notion workflow" was actually a Supabase workflow with a best-ef
 
 ### Feature Roadmap
 
-- **Per-user Notion OAuth:** Currently the integration uses one shared Notion workspace (team integration). For per-user Notion sync, implement Notion OAuth and store individual access tokens in `profiles.notion_token`
+- [x] **Per-user Notion OAuth:** Migrated to per-user OAuth and implemented two-way sync via Vercel cron.
 - **Streak cron job:** Implement a Vercel Cron Job (`vercel.json` `crons`) to award daily streak XP to users with `last_active = yesterday`
 - **Search endpoint:** `api/users.js` is missing a `/api/users/search?q=` route referenced in the README — needs to be implemented
 - **Real-time notifications:** The `activities` table is populated but notifications are not pushed in real-time — add a Supabase Realtime subscription on the `activities` table in the frontend
