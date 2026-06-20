@@ -412,6 +412,8 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
   .chat-header .flex.gap8 button:not(:last-child){display:none}
 }
 </style>
+  <!-- LiveKit client SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
 </head>
 <body>
 
@@ -870,54 +872,64 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
 
     <!-- ── CALL ── -->
     <div id="p-call" class="page" style="padding:24px">
-      <div class="call-layout">
-        <div class="call-stage">
-          <div class="call-bg-glow"></div>
-          <div class="call-main-placeholder">
-            <div class="call-avatar-ring">
-              <div style="width:94px;height:94px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Fredoka',sans-serif;font-weight:800;font-size:34px;color:#fff">R</div>
-            </div>
-            <div class="call-name">Riya Patel</div>
-            <div class="call-status" id="call-status">● Connecting...</div>
-          </div>
-          <div class="call-mini">🧑‍💻</div>
-          <div class="call-controls">
-            <button class="call-btn mic" id="btn-mic" title="Mute" onclick="toggleMic()"><i class="ti ti-microphone" id="mic-icon"></i></button>
-            <button class="call-btn cam" id="btn-cam" title="Camera" onclick="toggleCam()"><i class="ti ti-video" id="cam-icon"></i></button>
-            <button class="call-btn screen" title="Share screen"><i class="ti ti-screen-share"></i></button>
-            <button class="call-btn end" title="End call" onclick="endCall()"><i class="ti ti-phone-off"></i></button>
-          </div>
+
+      <!-- ── Pre-call lobby ── -->
+      <div id="call-lobby" style="max-width:460px;margin:0 auto;padding-top:40px">
+        <h2 style="font-family:'Fredoka',sans-serif;font-size:26px;margin-bottom:6px">Start a Video Call</h2>
+        <p style="color:var(--text2);font-size:13px;margin-bottom:24px">Enter a room name to create or join a session with your peers.</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <input id="call-room-input" type="text" placeholder="Room name (e.g. bio-study-group)" style="font-size:14px">
+          <button class="btn btn-accent" onclick="joinLiveKitRoom()" style="justify-content:center;gap:8px">
+            <i class="ti ti-video"></i> Join Room
+          </button>
         </div>
-        <div class="call-panel">
-          <div class="call-panel-tabs">
-            <div class="cp-tab active" onclick="switchCallTab(this,'participants')">Participants (4)</div>
-            <div class="cp-tab" onclick="switchCallTab(this,'chat')">Chat</div>
+        <div id="call-lobby-error" style="display:none;margin-top:12px;color:var(--red);font-size:13px"></div>
+      </div>
+
+      <!-- ── Active call UI ── -->
+      <div id="call-active" style="display:none">
+        <div class="call-layout">
+          <div class="call-stage">
+            <div class="call-bg-glow"></div>
+
+            <!-- Remote video grid -->
+            <div id="lk-remote-grid" style="position:absolute;inset:0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;padding:60px 12px 70px;z-index:1"></div>
+
+            <!-- Waiting placeholder (shown when no remote participants) -->
+            <div id="lk-waiting" class="call-main-placeholder" style="z-index:2">
+              <div class="call-avatar-ring">
+                <div style="width:94px;height:94px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:flex;align-items:center;justify-content:center;font-family:'Fredoka',sans-serif;font-weight:800;font-size:34px;color:#fff">👥</div>
+              </div>
+              <div class="call-name">Waiting for peers…</div>
+              <div class="call-status" id="call-status" style="margin-top:4px">● Connected</div>
+            </div>
+
+            <!-- Local (self) preview -->
+            <div class="call-mini" id="lk-local-wrap">
+              <video id="lk-local-video" autoplay muted playsinline style="width:100%;height:100%;object-fit:cover;border-radius:8px;display:none"></video>
+              <span id="lk-local-avatar" style="font-size:22px">🧑‍💻</span>
+            </div>
+
+            <div class="call-controls">
+              <button class="call-btn mic" id="btn-mic" title="Mute" onclick="toggleMic()"><i class="ti ti-microphone" id="mic-icon"></i></button>
+              <button class="call-btn cam" id="btn-cam" title="Camera" onclick="toggleCam()"><i class="ti ti-video" id="cam-icon"></i></button>
+              <button class="call-btn screen" id="btn-screen" title="Share screen" onclick="toggleScreen()"><i class="ti ti-screen-share" id="screen-icon"></i></button>
+              <button class="call-btn end" title="End call" onclick="endCall()"><i class="ti ti-phone-off"></i></button>
+            </div>
           </div>
-          <div class="cp-body" id="call-panel-body">
-            <div class="participant-item">
-              <div class="p-ava" style="background:rgba(5,150,105,.15);color:var(--green)">R</div>
-              <div class="p-name">Riya Patel <span style="font-size:10px;color:var(--text3)">(Host)</span></div>
-              <div class="p-icons"><i class="ti ti-microphone"></i><i class="ti ti-video"></i></div>
+
+          <div class="call-panel">
+            <div class="call-panel-tabs">
+              <div class="cp-tab active" onclick="switchCallTab(this,'participants')">Participants</div>
+              <div class="cp-tab" onclick="switchCallTab(this,'chat')">Chat</div>
             </div>
-            <div class="participant-item">
-              <div class="p-ava" style="background:linear-gradient(135deg,var(--accent),var(--cyan));color:#fff;font-weight:800">A</div>
-              <div class="p-name">You</div>
-              <div class="p-icons" id="your-icons"><i class="ti ti-microphone"></i><i class="ti ti-video"></i></div>
+            <div class="cp-body" id="call-panel-body">
+              <!-- populated dynamically -->
             </div>
-            <div class="participant-item">
-              <div class="p-ava" style="background:rgba(124,58,237,.15);color:var(--purple)">K</div>
-              <div class="p-name">Kabir Singh</div>
-              <div class="p-icons"><i class="ti ti-microphone-off" style="color:var(--red)"></i><i class="ti ti-video"></i></div>
-            </div>
-            <div class="participant-item">
-              <div class="p-ava" style="background:rgba(217,119,6,.15);color:var(--gold)">S</div>
-              <div class="p-name">Sneha Mehta</div>
-              <div class="p-icons"><i class="ti ti-microphone"></i><i class="ti ti-video-off" style="color:var(--red)"></i></div>
-            </div>
-            <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:12px"><i class="ti ti-user-plus"></i> Invite Peer</button>
           </div>
         </div>
       </div>
+
     </div>
 
     <!-- NOTION PAGE -->
@@ -2108,27 +2120,252 @@ async function sendMsg() {
   }
 }
 
-// ── CALL ──
-let micOn=true,camOn=true;
-setTimeout(()=>{document.getElementById('call-status').innerHTML='<span style="color:var(--green)">● Connected</span>';},1800);
-function toggleMic(){micOn=!micOn;document.getElementById('btn-mic').classList.toggle('muted',!micOn);document.getElementById('mic-icon').className=micOn?'ti ti-microphone':'ti ti-microphone-off';}
-function toggleCam(){camOn=!camOn;document.getElementById('btn-cam').classList.toggle('muted',!camOn);document.getElementById('cam-icon').className=camOn?'ti ti-video':'ti ti-video-off';}
-function endCall(){document.getElementById('call-status').innerHTML='<span style="color:var(--red)">Call ended</span>';}
-function switchCallTab(el,tab){
-  document.querySelectorAll('.cp-tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
-  if(tab==='chat'){
-    document.getElementById('call-panel-body').innerHTML=`
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div style="background:var(--bg3);border-radius:10px 10px 10px 3px;padding:8px 10px;font-size:12px;color:var(--text)">Can everyone see my screen?</div>
-        <div style="background:rgba(99,102,241,.12);border-radius:10px 10px 3px 10px;padding:8px 10px;font-size:12px;align-self:flex-end;color:var(--text)">Yes! Looking good 👍</div>
-        <div style="background:var(--bg3);border-radius:10px 10px 10px 3px;padding:8px 10px;font-size:12px;color:var(--text)">Let\'s start with slide 3</div>
-      </div>
-      <div style="display:flex;gap:6px;margin-top:12px">
-        <input placeholder="Type..." style="flex:1;padding:6px 10px;font-size:12px">
-        <button class="btn btn-accent btn-sm btn-icon"><i class="ti ti-send" style="font-size:13px"></i></button>
-      </div>`;
+// ── CALL (LiveKit) ──────────────────────────────────────────────────
+let micOn = true, camOn = true, screenOn = false;
+let lkRoom = null;
+let localVideoTrack = null, localAudioTrack = null, localScreenTrack = null;
+
+async function joinLiveKitRoom() {
+  const roomName = document.getElementById('call-room-input').value.trim();
+  const errEl    = document.getElementById('call-lobby-error');
+  errEl.style.display = 'none';
+
+  if (!roomName) { errEl.textContent = 'Please enter a room name.'; errEl.style.display = 'block'; return; }
+
+  const token = localStorage.getItem('pl_token');
+  if (!token) { errEl.textContent = 'You must be logged in.'; errEl.style.display = 'block'; return; }
+
+  try {
+    const res  = await fetch('/api/livekit/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ roomName }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to get token');
+
+    await connectToRoom(data.wsUrl, data.token);
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
   }
 }
+
+async function connectToRoom(wsUrl, token) {
+  // LiveKit client SDK loaded from CDN
+  const { Room, RoomEvent, Track, createLocalVideoTrack, createLocalAudioTrack } = LivekitClient;
+
+  lkRoom = new Room({ adaptiveStream: true, dynacast: true });
+
+  lkRoom.on(RoomEvent.TrackSubscribed, onTrackSubscribed);
+  lkRoom.on(RoomEvent.TrackUnsubscribed, onTrackUnsubscribed);
+  lkRoom.on(RoomEvent.ParticipantConnected, refreshParticipants);
+  lkRoom.on(RoomEvent.ParticipantDisconnected, (p) => { document.getElementById(`remote-${p.sid}`)?.remove(); refreshParticipants(); });
+  lkRoom.on(RoomEvent.Disconnected, onRoomDisconnected);
+
+  await lkRoom.connect(wsUrl, token);
+
+  // Publish local camera + mic
+  try {
+    localAudioTrack = await createLocalAudioTrack();
+    await lkRoom.localParticipant.publishTrack(localAudioTrack);
+  } catch(e) { console.warn('Mic not available:', e); }
+
+  try {
+    localVideoTrack = await createLocalVideoTrack({ resolution: { width: 640, height: 480, frameRate: 24 } });
+    await lkRoom.localParticipant.publishTrack(localVideoTrack);
+    const localVid = document.getElementById('lk-local-video');
+    localVideoTrack.attach(localVid);
+    localVid.style.display = 'block';
+    document.getElementById('lk-local-avatar').style.display = 'none';
+  } catch(e) { console.warn('Camera not available:', e); }
+
+  // Switch to active call UI
+  document.getElementById('call-lobby').style.display  = 'none';
+  document.getElementById('call-active').style.display = 'block';
+
+  refreshParticipants();
+}
+
+function onTrackSubscribed(track, publication, participant) {
+  const { Track } = LivekitClient;
+  if (track.kind !== Track.Kind.Video && track.kind !== Track.Kind.Audio) return;
+
+  let container = document.getElementById(`remote-${participant.sid}`);
+  if (!container) {
+    container = document.createElement('div');
+    container.id = `remote-${participant.sid}`;
+    container.style.cssText = 'position:relative;flex:1 1 40%;min-width:160px;max-width:380px;aspect-ratio:4/3;border-radius:10px;overflow:hidden;background:#111';
+    const label = document.createElement('div');
+    label.style.cssText = 'position:absolute;bottom:6px;left:8px;font-size:11px;color:#fff;background:rgba(0,0,0,.5);padding:2px 6px;border-radius:6px;z-index:2';
+    label.textContent = participant.name || participant.identity;
+    container.appendChild(label);
+    document.getElementById('lk-remote-grid').appendChild(container);
+    document.getElementById('lk-waiting').style.display = 'none';
+  }
+
+  if (track.kind === Track.Kind.Video) {
+    const el = track.attach();
+    el.style.cssText = 'width:100%;height:100%;object-fit:cover';
+    container.insertBefore(el, container.firstChild);
+  } else {
+    document.body.appendChild(track.attach()); // audio elements just need to exist in DOM
+  }
+
+  refreshParticipants();
+}
+
+function onTrackUnsubscribed(track) {
+  track.detach().forEach(el => el.remove());
+  if (document.getElementById('lk-remote-grid').children.length === 0) {
+    document.getElementById('lk-waiting').style.display = '';
+  }
+}
+
+function onRoomDisconnected() {
+  document.getElementById('call-active').style.display = 'none';
+  document.getElementById('call-lobby').style.display  = '';
+  document.getElementById('call-room-input').value     = '';
+  lkRoom = null; localVideoTrack = null; localAudioTrack = null; localScreenTrack = null;
+  micOn = true; camOn = true; screenOn = false;
+  document.getElementById('lk-remote-grid').innerHTML = '';
+  document.getElementById('lk-waiting').style.display = '';
+  const localVid = document.getElementById('lk-local-video');
+  localVid.srcObject = null; localVid.style.display = 'none';
+  document.getElementById('lk-local-avatar').style.display = '';
+}
+
+function refreshParticipants() {
+  if (!lkRoom) return;
+  const me   = lkRoom.localParticipant;
+  const others = Array.from(lkRoom.remoteParticipants.values());
+  const all  = [{ name: (me.name || me.identity) + ' (You)', mic: micOn, cam: camOn }, ...others.map(p => ({ name: p.name || p.identity, mic: true, cam: true }))];
+
+  document.querySelectorAll('.cp-tab')[0].textContent = `Participants (${all.length})`;
+
+  const body = document.getElementById('call-panel-body');
+  const isChat = document.querySelectorAll('.cp-tab')[1].classList.contains('active');
+  if (isChat) return;
+
+  body.innerHTML = all.map(p => `
+    <div class="participant-item">
+      <div class="p-ava" style="background:linear-gradient(135deg,var(--accent),var(--cyan));color:#fff;font-weight:800">${(p.name||'?')[0].toUpperCase()}</div>
+      <div class="p-name">${p.name}</div>
+      <div class="p-icons">
+        <i class="ti ti-microphone${p.mic?'':'-off'}" ${p.mic?'':'style="color:var(--red)"'}></i>
+        <i class="ti ti-video${p.cam?'':'-off'}" ${p.cam?'':'style="color:var(--red)"'}></i>
+      </div>
+    </div>`).join('') + `<button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center;margin-top:12px" onclick="copyRoomLink()"><i class="ti ti-link"></i> Copy invite link</button>`;
+}
+
+function copyRoomLink() {
+  const room = document.getElementById('call-room-input').value || (lkRoom?.name || '');
+  const link = `${location.origin}?room=${encodeURIComponent(room)}`;
+  navigator.clipboard.writeText(link).then(() => alert('Invite link copied!'));
+}
+
+async function toggleMic() {
+  micOn = !micOn;
+  if (localAudioTrack) { micOn ? await localAudioTrack.unmute() : await localAudioTrack.mute(); }
+  document.getElementById('btn-mic').classList.toggle('muted', !micOn);
+  document.getElementById('mic-icon').className = micOn ? 'ti ti-microphone' : 'ti ti-microphone-off';
+  refreshParticipants();
+}
+
+async function toggleCam() {
+  camOn = !camOn;
+  if (localVideoTrack) { camOn ? await localVideoTrack.unmute() : await localVideoTrack.mute(); }
+  document.getElementById('btn-cam').classList.toggle('muted', !camOn);
+  document.getElementById('cam-icon').className = camOn ? 'ti ti-video' : 'ti ti-video-off';
+  const localVid = document.getElementById('lk-local-video');
+  localVid.style.display = camOn ? 'block' : 'none';
+  document.getElementById('lk-local-avatar').style.display = camOn ? 'none' : '';
+}
+
+async function toggleScreen() {
+  if (!lkRoom) return;
+  const { createLocalScreenTracks, Track } = LivekitClient;
+  if (screenOn) {
+    if (localScreenTrack) { await lkRoom.localParticipant.unpublishTrack(localScreenTrack); localScreenTrack.stop(); localScreenTrack = null; }
+    screenOn = false;
+    document.getElementById('btn-screen').classList.remove('muted');
+    document.getElementById('screen-icon').className = 'ti ti-screen-share';
+  } else {
+    try {
+      const tracks = await createLocalScreenTracks({ audio: false });
+      localScreenTrack = tracks.find(t => t.kind === Track.Kind.Video);
+      if (localScreenTrack) {
+        await lkRoom.localParticipant.publishTrack(localScreenTrack);
+        screenOn = true;
+        document.getElementById('btn-screen').classList.add('muted');
+        document.getElementById('screen-icon').className = 'ti ti-screen-share-off';
+        localScreenTrack.on('ended', () => toggleScreen());
+      }
+    } catch(e) { console.warn('Screen share cancelled or denied:', e); }
+  }
+}
+
+async function endCall() {
+  if (lkRoom) { await lkRoom.disconnect(); }
+  else { onRoomDisconnected(); }
+}
+
+function switchCallTab(el, tab) {
+  document.querySelectorAll('.cp-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  if (tab === 'chat') {
+    document.getElementById('call-panel-body').innerHTML = `
+      <div id="lk-chat-msgs" style="display:flex;flex-direction:column;gap:8px;flex:1;overflow-y:auto"></div>
+      <div style="display:flex;gap:6px;margin-top:12px">
+        <input id="lk-chat-inp" placeholder="Type..." style="flex:1;padding:6px 10px;font-size:12px" onkeydown="if(event.key==='Enter')sendCallChat()">
+        <button class="btn btn-accent btn-sm btn-icon" onclick="sendCallChat()"><i class="ti ti-send" style="font-size:13px"></i></button>
+      </div>`;
+    if (lkRoom) setupCallChat();
+  } else {
+    refreshParticipants();
+  }
+}
+
+function setupCallChat() {
+  const { RoomEvent, DataPacket_Kind } = LivekitClient;
+  lkRoom.on(RoomEvent.DataReceived, (payload, participant) => {
+    const msg  = new TextDecoder().decode(payload);
+    const name = participant?.identity || 'Peer';
+    appendCallChat(name, msg, false);
+  });
+}
+
+async function sendCallChat() {
+  const inp = document.getElementById('lk-chat-inp');
+  const msg = inp.value.trim();
+  if (!msg || !lkRoom) return;
+  const { DataPacket_Kind } = LivekitClient;
+  await lkRoom.localParticipant.publishData(new TextEncoder().encode(msg), DataPacket_Kind.RELIABLE);
+  appendCallChat('You', msg, true);
+  inp.value = '';
+}
+
+function appendCallChat(sender, text, isMine) {
+  const wrap = document.getElementById('lk-chat-msgs');
+  if (!wrap) return;
+  const d = document.createElement('div');
+  d.style.cssText = `background:${isMine?'rgba(99,102,241,.12)':'var(--bg3)'};border-radius:${isMine?'10px 10px 3px 10px':'10px 10px 10px 3px'};padding:8px 10px;font-size:12px;${isMine?'align-self:flex-end':''}`;
+  d.innerHTML = `<span style="font-size:10px;color:var(--text3);display:block;margin-bottom:2px">${sender}</span>${text}`;
+  wrap.appendChild(d);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+// Auto-join if URL has ?room= param (from invite link)
+(function() {
+  const params = new URLSearchParams(location.search);
+  const room   = params.get('room');
+  if (room) {
+    document.addEventListener('DOMContentLoaded', () => {
+      const inp = document.getElementById('call-room-input');
+      if (inp) { inp.value = room; showPage('call', document.getElementById('nav-call')); }
+    });
+  }
+})();
 
 // ── PREMIUM ──
 function showUpgradeModal(){document.getElementById('upgrade-modal').classList.remove('hidden');}
@@ -2410,18 +2647,5 @@ function renderSceneXP(){
     </div>`;
 }
 </script>
-  <script type="module">
-import {
-    Room,
-    RoomEvent
-} from "https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.esm.mjs";
-
-window.LiveKit = {
-    Room,
-    RoomEvent
-};
-</script>
-
-<script src="js/videoCall.js"></script>
 </body>
 </html>
