@@ -10,13 +10,11 @@ export default async function handler(req, res) {
   // ── POST /api/auth/signup ─────────────────────────────────────────
   if (url === '/api/auth/signup' && req.method === 'POST') {
     const { email, password, full_name, college, course } = req.body;
-    console.log('--- SIGNUP START ---', { email, full_name });
 
     if (!email || !password || !full_name) {
       return json(res, 400, { error: 'email, password and full_name are required' });
     }
 
-    console.log('Attempting to create user in Supabase Auth...');
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
@@ -25,25 +23,20 @@ export default async function handler(req, res) {
     });
 
     if (error) {
-      console.log('Supabase Auth Error:', error.message);
       return json(res, 400, { error: error.message });
     }
-    console.log('User created successfully:', data.user.id);
 
-    console.log('Updating profile table...');
     const { error: profileErr } = await supabaseAdmin
       .from('profiles')
       .update({ full_name, college, course })
       .eq('id', data.user.id);
     
-    if (profileErr) console.log('Profile update error (non-fatal):', profileErr.message);
+    if (profileErr) console.error('Profile update error (non-fatal):', profileErr.message);
 
-    console.log('Granting default skin...');
     await supabaseAdmin
       .from('user_skins')
       .upsert({ user_id: data.user.id, skin_key: 'default' }, { onConflict: 'user_id,skin_key' });
 
-    console.log('--- SIGNUP COMPLETE ---');
     return json(res, 201, {
       message: 'Account created! You can now sign in immediately.',
       user_id: data.user.id,

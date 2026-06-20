@@ -11,9 +11,16 @@
     { "source": "/api/follows/:path*", "destination": "/api/follows/index.js" },
     { "source": "/api/quiz/:path*", "destination": "/api/quiz/index.js" },
     { "source": "/api/premium/:path*", "destination": "/api/premium/index.js" },
+    { "source": "/api/notion-sync", "destination": "/api/notion-sync.js" },
     {
       "source": "/((?!api/).*)",
       "destination": "/public/index.html"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/notion-sync",
+      "schedule": "*/10 * * * *"
     }
   ]
 }
