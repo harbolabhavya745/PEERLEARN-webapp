@@ -6,7 +6,7 @@ export default async function handler(req, res) {
   if (handleCors(req, res)) return;
 
   const url = req.url.split('?')[0];
-  const baseUrl = process.env.SITE_URL.replace(/\/$/, '');
+  const baseUrl = (process.env.SITE_URL || 'http://localhost:3000').replace(/\/$/, '');
 
   // ── OAUTH CALLBACK (NO AUTH REQUIRED) ────────────────────────
   if (url === '/api/notion/callback' && req.method === 'GET') {
