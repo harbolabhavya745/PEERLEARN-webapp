@@ -1,6 +1,7 @@
 {
   "version": 2,
   "rewrites": [
+    { "source": "/api/livekit/:path*", "destination": "/api/livekit.js" },
     { "source": "/api/auth/:path*",    "destination": "/api/auth.js" },
     { "source": "/api/chat/:path*",    "destination": "/api/chat.js" },
     { "source": "/api/notes/:path*",   "destination": "/api/notes.js" },
