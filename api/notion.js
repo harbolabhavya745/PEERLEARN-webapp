@@ -1,6 +1,6 @@
 import { handleCors, json, requireAuth } from '../lib/middleware.js';
 import { supabaseAdmin } from '../lib/supabase.js';
-import { getNotionClient, requireNotion, createDatabases, syncUserNotion } from '../lib/notion.js';
+import { getNotionClient, requireNotion, createDatabases } from '../lib/notion.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -41,33 +41,54 @@ export default async function handler(req, res) {
         throw new Error('Failed to get access token');
       }
 
-      // Find a parent page
+      // With public OAuth, we can only create pages inside items the user shared.
+      // Find the first accessible page or database.
       const userNotion = getNotionClient(tokenData.access_token);
-      const searchRes = await userNotion.search({
-        filter: { property: 'object', value: 'page' },
-        page_size: 1
-      });
-      const parentPageId = searchRes.results[0]?.id;
 
-      if (!parentPageId) {
-        throw new Error('No accessible page found to create databases in.');
+      let parentItem = null;
+      for (let i = 0; i < 5; i++) {
+        const searchRes = await userNotion.search({});
+        // Prefer a plain page, but accept a database too
+        parentItem = searchRes.results?.find(r => r.object === 'page') || searchRes.results?.[0];
+        if (parentItem) break;
+        await new Promise(r => setTimeout(r, 1500));
       }
 
-      // Create DBs
-      const dbs = await createDatabases(tokenData.access_token, parentPageId);
+      if (!parentItem) {
+        throw new Error('No accessible pages or databases found. Please select at least one item when connecting Notion.');
+      }
+
+      // Create a "📚 PeerLearn" hub page inside the accessible item.
+      // Notion uses page_id for page parents and database_id for database parents.
+      const hubPage = await userNotion.pages.create({
+        parent: parentItem.object === 'database'
+          ? { database_id: parentItem.id }
+          : { page_id: parentItem.id },
+        properties: parentItem.object === 'database'
+          ? { Name: { title: [{ text: { content: '📚 PeerLearn' } }] } }
+          : { title: [{ text: { content: '📚 PeerLearn' } }] }
+      });
+
+      // Create 3 databases inside the hub
+      const dbs = await createDatabases(tokenData.access_token, hubPage.id);
+
 
       // Store in profiles (state is userId)
-      await supabaseAdmin.from('profiles').update({
+      const { error: updateError } = await supabaseAdmin.from('profiles').update({
         notion_token: tokenData.access_token,
         notion_workspace_id: tokenData.workspace_id,
         notion_workspace_name: tokenData.workspace_name,
         notion_bot_id: tokenData.bot_id,
-        notion_parent_page_id: parentPageId,
+        notion_parent_page_id: hubPage.id,
         notion_todos_db_id: dbs.todos_db_id,
         notion_events_db_id: dbs.events_db_id,
         notion_notes_db_id: dbs.notes_db_id,
         notion_connected_at: new Date().toISOString()
       }).eq('id', state);
+
+      if (updateError) {
+        throw new Error(`Profile update failed: ${updateError.message}`);
+      }
 
       res.writeHead(302, { Location: `${baseUrl}/#notion?connected=true` });
       return res.end();
@@ -97,12 +118,15 @@ export default async function handler(req, res) {
       return json(res, 200, { 
         connected: !!req.profile?.notion_token,
         workspace_name: req.profile?.notion_workspace_name,
-        last_synced_at: req.profile?.notion_last_synced_at
+        last_synced_at: req.profile?.notion_last_synced_at,
+        todos_db_id: req.profile?.notion_todos_db_id,
+        events_db_id: req.profile?.notion_events_db_id,
+        notes_db_id: req.profile?.notion_notes_db_id
       });
     }
 
     if (url === '/api/notion/disconnect' && req.method === 'POST') {
-      await supabaseAdmin.from('profiles').update({
+      const { error: discError } = await supabaseAdmin.from('profiles').update({
         notion_token: null,
         notion_workspace_id: null,
         notion_workspace_name: null,
@@ -114,226 +138,195 @@ export default async function handler(req, res) {
         notion_connected_at: null,
         notion_last_synced_at: null
       }).eq('id', userId);
+      if (discError) {
+        throw new Error(`Profile update failed: ${discError.message}`);
+      }
       return json(res, 200, { success: true });
     }
 
     // ── SYNC ──────────────────────────────────────────────
     if (url === '/api/notion/sync' && req.method === 'POST') {
-      if (!requireNotion(req, res)) return;
-      try {
-        await syncUserNotion(req.profile);
-        return json(res, 200, { success: true });
-      } catch (err) {
-        console.error("Sync error:", err);
-        return json(res, 500, { error: 'Sync failed' });
-      }
+      // Notion is the sole data store now, no Supabase sync required.
+      return json(res, 200, { success: true });
     }
 
     // ── TODOS ──────────────────────────────────────────────
     if (url === '/api/notion/todos') {
-      if (req.method === 'GET') {
-        const { data: todos } = await supabaseAdmin.from('todos').select('*').eq('author_id', userId).order('created_at', { ascending: false });
-        return json(res, 200, { todos: todos || [] });
-      }
-      
       if (!requireNotion(req, res)) return;
+      const userNotion = getNotionClient(req.profile.notion_token);
+
+      if (req.method === 'GET') {
+        try {
+          const notionRes = await userNotion.databases.query({ database_id: req.profile.notion_todos_db_id });
+          const todos = notionRes.results.map(page => ({
+            id: page.id,
+            title: page.properties['Name']?.title?.[0]?.text?.content || 'Untitled',
+            status: page.properties['Status']?.status?.name || 'Not started',
+            due_date: page.properties['Due Date']?.date?.start || null
+          }));
+          return json(res, 200, { todos });
+        } catch (err) { return json(res, 500, { error: err.message }); }
+      }
 
       if (req.method === 'POST') {
-        const { title, status, due_date } = req.body;
-        const { data: todo } = await supabaseAdmin.from('todos').insert({
-          author_id: userId, title, status: status || 'Not started', due_date: due_date || null
-        }).select().single();
-
         try {
-          const userNotion = getNotionClient(req.profile.notion_token);
+          const { title, status, due_date } = req.body;
           const notionPage = await userNotion.pages.create({
             parent: { database_id: req.profile.notion_todos_db_id },
             properties: {
-              'Name': { title: [{ text: { content: todo.title } }] },
-              'Status': { status: { name: todo.status } },
-              'Due Date': todo.due_date ? { date: { start: todo.due_date } } : undefined,
-              'PeerLearn ID': { rich_text: [{ text: { content: todo.id } }] }
+              'Name': { title: [{ text: { content: title || 'Untitled' } }] },
+              'Status': { status: { name: status || 'Not started' } },
+              'Due Date': due_date ? { date: { start: due_date } } : undefined
             }
           });
-          await supabaseAdmin.from('todos').update({ notion_page_id: notionPage.id, notion_last_edited: notionPage.last_edited_time }).eq('id', todo.id);
-          todo.notion_page_id = notionPage.id;
-        } catch (err) {
-          console.error('Notion sync failed:', err.message);
-        }
-        return json(res, 201, { todo });
+          return json(res, 201, { todo: { id: notionPage.id, title, status, due_date } });
+        } catch (err) { return json(res, 500, { error: err.message }); }
       }
 
       if (req.method === 'PATCH') {
-        const { id, title, status, due_date } = req.body;
-        const { data: todo } = await supabaseAdmin.from('todos')
-          .update({ title, status, due_date, updated_at: new Date().toISOString() })
-          .eq('id', id).eq('author_id', userId).select().single();
-
-        if (todo?.notion_page_id) {
-          try {
-            const userNotion = getNotionClient(req.profile.notion_token);
-            await userNotion.pages.update({
-              page_id: todo.notion_page_id,
-              properties: {
-                'Name': { title: [{ text: { content: todo.title } }] },
-                'Status': { status: { name: todo.status } },
-                'Due Date': todo.due_date ? { date: { start: todo.due_date } } : undefined
-              }
-            });
-          } catch (err) { console.error('Notion update failed:', err.message); }
-        }
-        return json(res, 200, { todo });
+        try {
+          const { id, title, status, due_date } = req.body;
+          const notionPage = await userNotion.pages.update({
+            page_id: id,
+            properties: {
+              ...(title !== undefined && { 'Name': { title: [{ text: { content: title } }] } }),
+              ...(status !== undefined && { 'Status': { status: { name: status } } }),
+              ...(due_date !== undefined && { 'Due Date': due_date ? { date: { start: due_date } } : null })
+            }
+          });
+          return json(res, 200, { success: true });
+        } catch (err) { return json(res, 500, { error: err.message }); }
       }
 
       if (req.method === 'DELETE') {
-        const { id } = req.body;
-        const { data: todo } = await supabaseAdmin.from('todos').delete().eq('id', id).eq('author_id', userId).select().single();
-        if (todo?.notion_page_id) {
-          try {
-            const userNotion = getNotionClient(req.profile.notion_token);
-            await userNotion.pages.update({ page_id: todo.notion_page_id, archived: true });
-          } catch (err) { console.error('Notion archive failed:', err.message); }
-        }
-        return json(res, 200, { success: true });
+        try {
+          await userNotion.pages.update({ page_id: req.body.id, archived: true });
+          return json(res, 200, { success: true });
+        } catch (err) { return json(res, 500, { error: err.message }); }
       }
     }
 
     // ── EVENTS ─────────────────────────────────────────────
     if (url === '/api/notion/events') {
-      if (req.method === 'GET') {
-        const { data: events } = await supabaseAdmin.from('events').select('*').eq('author_id', userId).order('created_at', { ascending: false });
-        return json(res, 200, { events: events || [] });
-      }
-      
       if (!requireNotion(req, res)) return;
+      const userNotion = getNotionClient(req.profile.notion_token);
+
+      if (req.method === 'GET') {
+        try {
+          const notionRes = await userNotion.databases.query({ database_id: req.profile.notion_events_db_id });
+          const events = notionRes.results.map(page => ({
+            id: page.id,
+            title: page.properties['Name']?.title?.[0]?.text?.content || 'Untitled',
+            event_type: page.properties['Event Type']?.select?.name || 'Other',
+            date: page.properties['Date']?.date?.start || null
+          }));
+          return json(res, 200, { events });
+        } catch (err) { return json(res, 500, { error: err.message }); }
+      }
 
       if (req.method === 'POST') {
-        const { title, event_type, date } = req.body;
-        const { data: event } = await supabaseAdmin.from('events').insert({
-          author_id: userId, title, event_type: event_type || 'Other', date: date || null
-        }).select().single();
-
         try {
-          const userNotion = getNotionClient(req.profile.notion_token);
+          const { title, event_type, date } = req.body;
           const notionPage = await userNotion.pages.create({
             parent: { database_id: req.profile.notion_events_db_id },
             properties: {
-              'Name': { title: [{ text: { content: event.title } }] },
-              'Event Type': { select: { name: event.event_type } },
-              'Date': event.date ? { date: { start: event.date } } : undefined,
-              'PeerLearn ID': { rich_text: [{ text: { content: event.id } }] }
+              'Name': { title: [{ text: { content: title || 'Untitled' } }] },
+              'Event Type': { select: { name: event_type || 'Other' } },
+              'Date': date ? { date: { start: date } } : undefined
             }
           });
-          await supabaseAdmin.from('events').update({ notion_page_id: notionPage.id, notion_last_edited: notionPage.last_edited_time }).eq('id', event.id);
-          event.notion_page_id = notionPage.id;
-        } catch (err) {
-          console.error('Notion sync failed:', err.message);
-        }
-        return json(res, 201, { event });
+          return json(res, 201, { event: { id: notionPage.id, title, event_type, date } });
+        } catch (err) { return json(res, 500, { error: err.message }); }
       }
 
       if (req.method === 'PATCH') {
-        const { id, title, event_type, date } = req.body;
-        const { data: event } = await supabaseAdmin.from('events')
-          .update({ title, event_type, date, updated_at: new Date().toISOString() })
-          .eq('id', id).eq('author_id', userId).select().single();
-
-        if (event?.notion_page_id) {
-          try {
-            const userNotion = getNotionClient(req.profile.notion_token);
-            await userNotion.pages.update({
-              page_id: event.notion_page_id,
-              properties: {
-                'Name': { title: [{ text: { content: event.title } }] },
-                'Event Type': { select: { name: event.event_type } },
-                'Date': event.date ? { date: { start: event.date } } : undefined
-              }
-            });
-          } catch (err) { console.error('Notion update failed:', err.message); }
-        }
-        return json(res, 200, { event });
+        try {
+          const { id, title, event_type, date } = req.body;
+          const notionPage = await userNotion.pages.update({
+            page_id: id,
+            properties: {
+              ...(title !== undefined && { 'Name': { title: [{ text: { content: title } }] } }),
+              ...(event_type !== undefined && { 'Event Type': { select: { name: event_type } } }),
+              ...(date !== undefined && { 'Date': date ? { date: { start: date } } : null })
+            }
+          });
+          return json(res, 200, { success: true });
+        } catch (err) { return json(res, 500, { error: err.message }); }
       }
 
       if (req.method === 'DELETE') {
-        const { id } = req.body;
-        const { data: event } = await supabaseAdmin.from('events').delete().eq('id', id).eq('author_id', userId).select().single();
-        if (event?.notion_page_id) {
-          try {
-            const userNotion = getNotionClient(req.profile.notion_token);
-            await userNotion.pages.update({ page_id: event.notion_page_id, archived: true });
-          } catch (err) { console.error('Notion archive failed:', err.message); }
-        }
-        return json(res, 200, { success: true });
+        try {
+          await userNotion.pages.update({ page_id: req.body.id, archived: true });
+          return json(res, 200, { success: true });
+        } catch (err) { return json(res, 500, { error: err.message }); }
       }
     }
 
     // ── NOTES ──────────────────────────────────────────────
     if (url === '/api/notion/notes') {
-      if (req.method === 'GET') {
-        const { data: notes } = await supabaseAdmin.from('study_notes').select('*').eq('author_id', userId).order('created_at', { ascending: false });
-        return json(res, 200, { notes: notes || [] });
-      }
-      
       if (!requireNotion(req, res)) return;
+      const userNotion = getNotionClient(req.profile.notion_token);
+
+      if (req.method === 'GET') {
+        try {
+          const notionRes = await userNotion.databases.query({ database_id: req.profile.notion_notes_db_id });
+          const notes = await Promise.all(notionRes.results.slice(0, 15).map(async (page) => {
+            let content = '';
+            try {
+              const blocks = await userNotion.blocks.children.list({ block_id: page.id });
+              content = blocks.results
+                .map(b => b.paragraph?.rich_text?.[0]?.text?.content || '')
+                .join('\n');
+            } catch (e) { console.error('Error fetching block content:', e.message); }
+
+            return {
+              id: page.id,
+              title: page.properties['Name']?.title?.[0]?.text?.content || 'Untitled',
+              subject: page.properties['Subject']?.select?.name || 'Other',
+              is_public: page.properties['Public']?.checkbox || false,
+              content
+            };
+          }));
+          return json(res, 200, { notes });
+        } catch (err) { return json(res, 500, { error: err.message }); }
+      }
 
       if (req.method === 'POST') {
-        const { title, content, subject, is_public } = req.body;
-        const { data: note } = await supabaseAdmin.from('study_notes').insert({
-          author_id: userId, title, content, subject: subject || 'Other', is_public: is_public || false
-        }).select().single();
-
         try {
-          const userNotion = getNotionClient(req.profile.notion_token);
+          const { title, content, subject, is_public } = req.body;
           const notionPage = await userNotion.pages.create({
             parent: { database_id: req.profile.notion_notes_db_id },
             properties: {
-              'Name': { title: [{ text: { content: note.title } }] },
-              'Subject': { select: { name: note.subject } },
-              'Public': { checkbox: note.is_public },
-              'PeerLearn ID': { rich_text: [{ text: { content: note.id } }] }
+              'Name': { title: [{ text: { content: title || 'Untitled' } }] },
+              'Subject': { select: { name: subject || 'Other' } },
+              'Public': { checkbox: is_public || false }
             },
             children: [{ object: 'block', type: 'paragraph', paragraph: { rich_text: [{ text: { content: content || "" } }] } }]
           });
-          await supabaseAdmin.from('study_notes').update({ notion_page_id: notionPage.id, notion_last_edited: notionPage.last_edited_time }).eq('id', note.id);
-          note.notion_page_id = notionPage.id;
-        } catch (err) {
-          console.error('Notion sync failed:', err.message);
-        }
-        return json(res, 201, { note });
+          return json(res, 201, { note: { id: notionPage.id, title, subject, is_public, content } });
+        } catch (err) { return json(res, 500, { error: err.message }); }
       }
 
       if (req.method === 'PATCH') {
-        const { id, title, content, subject, is_public } = req.body;
-        const { data: note } = await supabaseAdmin.from('study_notes')
-          .update({ title, content, subject, is_public, updated_at: new Date().toISOString() })
-          .eq('id', id).eq('author_id', userId).select().single();
-
-        if (note?.notion_page_id) {
-          try {
-            const userNotion = getNotionClient(req.profile.notion_token);
-            await userNotion.pages.update({
-              page_id: note.notion_page_id,
-              properties: {
-                'Name': { title: [{ text: { content: note.title } }] },
-                'Subject': { select: { name: note.subject } },
-                'Public': { checkbox: note.is_public }
-              }
-            });
-          } catch (err) { console.error('Notion update failed:', err.message); }
-        }
-        return json(res, 200, { note });
+        try {
+          const { id, title, subject, is_public } = req.body;
+          const notionPage = await userNotion.pages.update({
+            page_id: id,
+            properties: {
+              ...(title !== undefined && { 'Name': { title: [{ text: { content: title } }] } }),
+              ...(subject !== undefined && { 'Subject': { select: { name: subject } } }),
+              ...(is_public !== undefined && { 'Public': { checkbox: is_public } })
+            }
+          });
+          return json(res, 200, { success: true });
+        } catch (err) { return json(res, 500, { error: err.message }); }
       }
 
       if (req.method === 'DELETE') {
-        const { id } = req.body;
-        const { data: note } = await supabaseAdmin.from('study_notes').delete().eq('id', id).eq('author_id', userId).select().single();
-        if (note?.notion_page_id) {
-          try {
-            const userNotion = getNotionClient(req.profile.notion_token);
-            await userNotion.pages.update({ page_id: note.notion_page_id, archived: true });
-          } catch (err) { console.error('Notion archive failed:', err.message); }
-        }
-        return json(res, 200, { success: true });
+        try {
+          await userNotion.pages.update({ page_id: req.body.id, archived: true });
+          return json(res, 200, { success: true });
+        } catch (err) { return json(res, 500, { error: err.message }); }
       }
     }
 

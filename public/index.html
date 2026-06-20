@@ -1078,7 +1078,8 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
         banner.innerHTML = `
           <div class="card mb20" style="text-align:center;padding:40px 20px">
             <h2>🔗 Connect Your Notion Workspace</h2>
-            <p style="color:var(--text2);margin:12px 0 24px">PeerLearn will create organized databases for your Todos, Events, and Study Notes directly in your Notion workspace.</p>
+            <p style="color:var(--text2);margin:12px 0 8px">PeerLearn will automatically create a <strong>📚 PeerLearn</strong> page in your Notion workspace with organized databases for Todos, Events, and Study Notes.</p>
+            <p style="color:var(--text3);font-size:12px;margin-bottom:24px">💡 When Notion asks you to select pages, just pick <strong>any one page</strong> (e.g. your main workspace page). PeerLearn will set everything up inside it automatically.</p>
             <button class="btn btn-accent" onclick="window.connectNotion()">Connect Notion</button>
           </div>
         `;
@@ -1585,6 +1586,28 @@ function updateUIWithUserData() {
     }
   });
 
+  // Permanently hide the Premium sidebar tab if they are already Premium
+  const navPremium = document.getElementById('nav-premium');
+  const mnavPremium = document.getElementById('mnav-premium');
+  if (currentPlan !== 'free') {
+    if (navPremium) navPremium.style.display = 'none';
+    if (mnavPremium) mnavPremium.style.display = 'none';
+  } else {
+    if (navPremium) navPremium.style.display = '';
+    if (mnavPremium) mnavPremium.style.display = '';
+  }
+
+  // Update Notion sidebar tab if they are connected
+  const navNotion = document.getElementById('nav-notion');
+  const mnavNotion = document.getElementById('mnav-notion');
+  if (currentUser.notion_token) {
+    if (navNotion) navNotion.innerHTML = '<i class="ti ti-calendar-check" style="color:var(--green)"></i><span class="tip">Notion Linked</span>';
+    if (mnavNotion) mnavNotion.innerHTML = '<i class="ti ti-calendar-check" style="color:var(--green)"></i><span>Notion</span>';
+  } else {
+    if (navNotion) navNotion.innerHTML = '<i class="ti ti-calendar-event"></i><span class="tip">Notion Sync</span>';
+    if (mnavNotion) mnavNotion.innerHTML = '<i class="ti ti-calendar-event"></i><span>Notion Sync</span>';
+  }
+
   // Update Profile Page
   const profName = document.getElementById('profile-full-name');
   if (profName) profName.textContent = currentUser.full_name;
@@ -1746,6 +1769,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     initSupabase();
     await loadInitialData();
     enterApp();
+    if (window.location.hash) {
+      const pageId = window.location.hash.substring(1).split('?')[0];
+      const navEl = document.getElementById('nav-' + pageId) || document.getElementById('mnav-' + pageId);
+      if (document.getElementById('p-' + pageId)) {
+        showPage(pageId, navEl);
+      }
+    }
   }
 });
 
@@ -2241,8 +2271,16 @@ function switchCallTab(el,tab){
 function showUpgradeModal(){document.getElementById('upgrade-modal').classList.remove('hidden');}
 function activatePremium(){
   document.getElementById('upgrade-modal').classList.add('hidden');
-  document.querySelector('.topbar-right .badge.bo').innerHTML='<i class="ti ti-crown"></i> Pro';
-  document.querySelector('.topbar-right .btn').style.display='none';
+  document.querySelector('.topbar-right .badge.bo').innerHTML='<i class="ti ti-crown"></i> Upgrading...';
+  apiCall('/api/auth/me', 'PATCH', { plan: 'pro' })
+    .then(() => {
+      loadInitialData(); // Refresh UI and state
+      alert('Successfully upgraded to Pro!');
+    })
+    .catch(err => {
+      alert('Upgrade failed: ' + err.message);
+      document.querySelector('.topbar-right .badge.bo').innerHTML='<i class="ti ti-crown"></i> Free';
+    });
 }
 
 // ══════════════════════════════════════
