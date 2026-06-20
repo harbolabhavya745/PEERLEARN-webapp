@@ -1,6 +1,6 @@
 import { handleCors, json, requireAuth } from '../lib/middleware.js';
 import { supabaseAdmin } from '../lib/supabase.js';
-import { getNotionClient, requireNotion, createDatabases } from '../lib/notion.js';
+import { getNotionClient, requireNotion, createDatabases, syncUserNotion } from '../lib/notion.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -115,6 +115,18 @@ export default async function handler(req, res) {
         notion_last_synced_at: null
       }).eq('id', userId);
       return json(res, 200, { success: true });
+    }
+
+    // ── SYNC ──────────────────────────────────────────────
+    if (url === '/api/notion/sync' && req.method === 'POST') {
+      if (!requireNotion(req, res)) return;
+      try {
+        await syncUserNotion(req.profile);
+        return json(res, 200, { success: true });
+      } catch (err) {
+        console.error("Sync error:", err);
+        return json(res, 500, { error: 'Sync failed' });
+      }
     }
 
     // ── TODOS ──────────────────────────────────────────────

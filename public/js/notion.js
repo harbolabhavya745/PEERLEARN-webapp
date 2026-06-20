@@ -31,6 +31,9 @@ export const notionApi = {
   async disconnect() {
     return this.fetchWithAuth('/api/notion/disconnect', { method: 'POST' });
   },
+  async sync() {
+    return this.fetchWithAuth('/api/notion/sync', { method: 'POST' });
+  },
 
   // Notes
   async createNote(title, content, subject, is_public = false) {

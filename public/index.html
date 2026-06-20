@@ -1044,6 +1044,17 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
     } catch (e) { alert(e.message); }
   };
 
+  window.syncNotion = async (btn) => {
+    if (btn) {
+      btn.innerText = "Syncing...";
+      btn.disabled = true;
+    }
+    try {
+      await notionApi.sync();
+      await window.loadNotionData();
+    } catch (e) { alert(e.message); }
+  };
+
   window.addEventListener('notion-revoked', () => {
     alert("Notion connection was revoked. Please reconnect.");
     window.loadNotionData();
@@ -1075,13 +1086,24 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
         return;
       }
 
+      if (status.connected && (!status.last_synced_at || new Date() - new Date(status.last_synced_at) > 5 * 60 * 1000)) {
+        try {
+          await notionApi.sync();
+          const newStatus = await notionApi.getStatus();
+          Object.assign(status, newStatus);
+        } catch(e) {}
+      }
+
       banner.innerHTML = `
         <div class="card mb20 flex aic jb" style="background:rgba(99,102,241,.1);border-color:var(--accent)">
           <div>
             <div style="font-weight:600;margin-bottom:4px">✅ Connected to "${status.workspace_name || 'Notion'}"</div>
             <div style="font-size:12px;color:var(--text2)">Last synced: ${status.last_synced_at ? new Date(status.last_synced_at).toLocaleString() : 'Never'}</div>
           </div>
-          <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window.disconnectNotion()">Disconnect</button>
+          <div class="flex gap8">
+            <button class="btn btn-ghost btn-sm" onclick="window.syncNotion(this)">Sync Now</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window.disconnectNotion()">Disconnect</button>
+          </div>
         </div>
       `;
       content.style.display = 'block';
