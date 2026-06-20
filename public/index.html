@@ -2410,5 +2410,18 @@ function renderSceneXP(){
     </div>`;
 }
 </script>
+  <script type="module">
+import {
+    Room,
+    RoomEvent
+} from "https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.esm.mjs";
+
+window.LiveKit = {
+    Room,
+    RoomEvent
+};
+</script>
+
+<script src="js/videoCall.js"></script>
 </body>
 </html>
