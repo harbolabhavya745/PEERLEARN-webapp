@@ -7,6 +7,7 @@
     "build": "echo 'No build step needed'"
   },
   "dependencies": {
+    "livekit-server-sdk": "^2.x"
     "@google/generative-ai": "^0.11.0",
     "@notionhq/client": "^5.22.0",
     "@supabase/supabase-js": "^2.43.0",
