@@ -29,6 +29,16 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   last_active   DATE DEFAULT CURRENT_DATE,
   plan          TEXT DEFAULT 'free' CHECK (plan IN ('free','pro','elite')),
   is_verified   BOOLEAN DEFAULT FALSE,
+  notion_token  TEXT,
+  notion_workspace_id TEXT,
+  notion_workspace_name TEXT,
+  notion_bot_id TEXT,
+  notion_parent_page_id TEXT,
+  notion_todos_db_id TEXT,
+  notion_events_db_id TEXT,
+  notion_notes_db_id TEXT,
+  notion_connected_at TIMESTAMPTZ,
+  notion_last_synced_at TIMESTAMPTZ,
   created_at    TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -301,17 +311,21 @@ CREATE TABLE IF NOT EXISTS public.study_notes (
   subject     TEXT,
   is_public   BOOLEAN DEFAULT FALSE,
   notion_page_id TEXT,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  notion_last_edited TIMESTAMPTZ,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS public.todos (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   author_id   UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
   title       TEXT NOT NULL,
-  status      TEXT DEFAULT 'Todo' CHECK (status IN ('Todo','In Progress','Done')),
+  status      TEXT DEFAULT 'Not started' CHECK (status IN ('Not started','In progress','Done')),
   due_date    DATE,
   notion_page_id TEXT,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  notion_last_edited TIMESTAMPTZ,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS public.events (
@@ -321,7 +335,9 @@ CREATE TABLE IF NOT EXISTS public.events (
   event_type  TEXT,
   date        TIMESTAMPTZ,
   notion_page_id TEXT,
-  created_at  TIMESTAMPTZ DEFAULT NOW()
+  notion_last_edited TIMESTAMPTZ,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.study_notes ENABLE ROW LEVEL SECURITY;

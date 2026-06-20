@@ -935,6 +935,8 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
     <!-- NOTION PAGE -->
     <div id="p-notion" class="page" style="padding:24px">
       <div class="topbar-title" style="margin-bottom:20px">Notion Integration</div>
+      <div id="notion-connection-banner"></div>
+      <div id="notion-content" style="display:none">
       <div class="card mb20">
         <h3>Shared Notes Wiki</h3>
         <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Sync your study notes directly to your Notion Database.</p>
@@ -956,7 +958,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
         <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Add tasks straight to your Notion Todos.</p>
         <div class="g3 mb12">
           <input type="text" id="notion-todo-title" placeholder="Task Name">
-          <select id="notion-todo-status"><option value="Todo">Todo</option><option value="In Progress">In Progress</option><option value="Done">Done</option></select>
+          <select id="notion-todo-status"><option value="Not started">Not started</option><option value="In progress">In progress</option><option value="Done">Done</option></select>
           <input type="date" id="notion-todo-date">
         </div>
         <button class="btn btn-green" onclick="window.submitNotionTodo()"><i class="ti ti-check"></i> Add Task</button>
@@ -974,6 +976,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
         <button class="btn btn-purple" onclick="window.submitNotionEvent()"><i class="ti ti-calendar"></i> Schedule Event</button>
         <div id="notion-events-list" class="mt16 flex fc gap8"></div>
       </div>
+      </div> <!-- end notion-content -->
     </div>
 
   </div><!-- /main -->
@@ -1038,38 +1041,143 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
 
 <script type="module">
   import { notionApi } from './js/notion.js';
-  window.loadNotionData = async () => {
+  
+  window.connectNotion = async () => {
     try {
-      const [notesRes, todosRes, eventsRes] = await Promise.all([
+      const res = await notionApi.getConnectUrl();
+      if (res.url) window.location.href = res.url;
+    } catch (e) { alert(e.message); }
+  };
+  window.disconnectNotion = async () => {
+    if(!confirm("Are you sure you want to disconnect Notion?")) return;
+    try {
+      await notionApi.disconnect();
+      window.loadNotionData();
+    } catch (e) { alert(e.message); }
+  };
+
+  window.syncNotion = async (btn) => {
+    if (btn) {
+      btn.innerText = "Syncing...";
+      btn.disabled = true;
+    }
+    try {
+      await notionApi.sync();
+      await window.loadNotionData();
+    } catch (e) { alert(e.message); }
+  };
+
+  window.addEventListener('notion-revoked', () => {
+    alert("Notion connection was revoked. Please reconnect.");
+    window.loadNotionData();
+  });
+
+  window.loadNotionData = async () => {
+    if (window.location.hash.includes('connected=true')) {
+      alert("Successfully connected to Notion!");
+      window.history.replaceState(null, '', window.location.pathname + '#notion');
+    } else if (window.location.hash.includes('error=')) {
+      alert("Failed to connect to Notion.");
+      window.history.replaceState(null, '', window.location.pathname + '#notion');
+    }
+
+    try {
+      const status = await notionApi.getStatus();
+      const banner = document.getElementById('notion-connection-banner');
+      const content = document.getElementById('notion-content');
+      
+      if (!status.connected) {
+        banner.innerHTML = `
+          <div class="card mb20" style="text-align:center;padding:40px 20px">
+            <h2>🔗 Connect Your Notion Workspace</h2>
+            <p style="color:var(--text2);margin:12px 0 8px">PeerLearn will automatically create a <strong>📚 PeerLearn</strong> page in your Notion workspace with organized databases for Todos, Events, and Study Notes.</p>
+            <p style="color:var(--text3);font-size:12px;margin-bottom:24px">💡 When Notion asks you to select pages, just pick <strong>any one page</strong> (e.g. your main workspace page). PeerLearn will set everything up inside it automatically.</p>
+            <button class="btn btn-accent" onclick="window.connectNotion()">Connect Notion</button>
+          </div>
+        `;
+        content.style.display = 'none';
+        return;
+      }
+
+      if (status.connected && (!status.last_synced_at || new Date() - new Date(status.last_synced_at) > 5 * 60 * 1000)) {
+        try {
+          await notionApi.sync();
+          const newStatus = await notionApi.getStatus();
+          Object.assign(status, newStatus);
+        } catch(e) {}
+      }
+
+      banner.innerHTML = `
+        <div class="card mb20 flex aic jb" style="background:rgba(99,102,241,.1);border-color:var(--accent)">
+          <div>
+            <div style="font-weight:600;margin-bottom:4px">✅ Connected to "${status.workspace_name || 'Notion'}"</div>
+            <div style="font-size:12px;color:var(--text2)">Last synced: ${status.last_synced_at ? new Date(status.last_synced_at).toLocaleString() : 'Never'}</div>
+          </div>
+          <div class="flex gap8">
+            <button class="btn btn-ghost btn-sm" onclick="window.syncNotion(this)">Sync Now</button>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window.disconnectNotion()">Disconnect</button>
+          </div>
+        </div>
+      `;
+      content.style.display = 'block';
+
+      const results = await Promise.allSettled([
         notionApi.getNotes(),
         notionApi.getTodos(),
         notionApi.getEvents()
       ]);
+      const notesRes = results[0].status === 'fulfilled' ? results[0].value : { notes: [], error: results[0].reason };
+      const todosRes = results[1].status === 'fulfilled' ? results[1].value : { todos: [], error: results[1].reason };
+      const eventsRes = results[2].status === 'fulfilled' ? results[2].value : { events: [], error: results[2].reason };
 
-      document.getElementById('notion-notes-list').innerHTML = notesRes.notes.map(n => `
+      document.getElementById('notion-notes-list').innerHTML = (notesRes.notes || []).map(n => `
         <div class="card-sm">
-          <div class="flex jb mb4"><strong style="font-size:13px">${n.title}</strong><span class="badge bg" style="font-size:10px">${n.subject}</span></div>
+          <div class="flex jb mb4">
+            <div class="flex aic gap8"><strong style="font-size:13px">${n.title}</strong><span class="badge bg" style="font-size:10px">${n.subject}</span></div>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="window.deleteNotionNote('${n.id}')" style="color:var(--red);padding:0"><i class="ti ti-trash"></i></button>
+          </div>
           <div style="font-size:12px;color:var(--text2)">${n.content}</div>
         </div>
       `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No notes yet</div>';
 
-      document.getElementById('notion-todos-list').innerHTML = todosRes.todos.map(t => `
+      document.getElementById('notion-todos-list').innerHTML = (todosRes.todos || []).map(t => `
         <div class="card-sm flex aic jb">
           <div style="font-size:13px;font-weight:600">${t.title}</div>
           <div class="flex aic gap8">
-            <span class="badge ${t.status==='Done'?'bg':'bc'}" style="font-size:10px">${t.status}</span>
+            <span class="badge ${t.status==='Done'?'bg':'bc'}" style="font-size:10px;cursor:pointer" onclick="window.toggleTodoStatus('${t.id}', '${t.status}')" title="Click to change status">${t.status}</span>
             <span style="font-size:11px;color:var(--text3)">${t.due_date || ''}</span>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="window.deleteNotionTodo('${t.id}')" style="color:var(--red);padding:0"><i class="ti ti-trash"></i></button>
           </div>
         </div>
       `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No tasks yet</div>';
 
-      document.getElementById('notion-events-list').innerHTML = eventsRes.events.map(e => `
+      document.getElementById('notion-events-list').innerHTML = (eventsRes.events || []).map(e => `
         <div class="card-sm">
-          <div class="flex jb mb4"><strong style="font-size:13px">${e.title}</strong><span class="badge bp" style="font-size:10px">${e.event_type}</span></div>
-          <div style="font-size:11px;color:var(--text3)">${new Date(e.date).toLocaleString()}</div>
+          <div class="flex jb mb4">
+            <div class="flex aic gap8"><strong style="font-size:13px">${e.title}</strong><span class="badge bp" style="font-size:10px">${e.event_type}</span></div>
+            <button class="btn btn-ghost btn-icon btn-sm" onclick="window.deleteNotionEvent('${e.id}')" style="color:var(--red);padding:0"><i class="ti ti-trash"></i></button>
+          </div>
+          <div style="font-size:11px;color:var(--text3)">${e.date ? new Date(e.date).toLocaleString() : ''}</div>
         </div>
       `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No events yet</div>';
     } catch (e) { console.error("Failed to load Notion data", e); }
+  };
+
+  window.deleteNotionNote = async (id) => {
+    if(!confirm("Delete note?")) return;
+    try { await notionApi.deleteNote(id); window.loadNotionData(); } catch(e) { alert(e.message); }
+  };
+  window.deleteNotionTodo = async (id) => {
+    if(!confirm("Delete task?")) return;
+    try { await notionApi.deleteTodo(id); window.loadNotionData(); } catch(e) { alert(e.message); }
+  };
+  window.deleteNotionEvent = async (id) => {
+    if(!confirm("Delete event?")) return;
+    try { await notionApi.deleteEvent(id); window.loadNotionData(); } catch(e) { alert(e.message); }
+  };
+  window.toggleTodoStatus = async (id, currentStatus) => {
+    const next = currentStatus === 'Not started' ? 'In progress' : currentStatus === 'In progress' ? 'Done' : 'Not started';
+    try { await notionApi.updateTodo(id, { status: next }); window.loadNotionData(); } catch(e) { alert(e.message); }
   };
 
   window.submitNotionNote = async () => {
@@ -1490,6 +1598,28 @@ function updateUIWithUserData() {
     }
   });
 
+  // Permanently hide the Premium sidebar tab if they are already Premium
+  const navPremium = document.getElementById('nav-premium');
+  const mnavPremium = document.getElementById('mnav-premium');
+  if (currentPlan !== 'free') {
+    if (navPremium) navPremium.style.display = 'none';
+    if (mnavPremium) mnavPremium.style.display = 'none';
+  } else {
+    if (navPremium) navPremium.style.display = '';
+    if (mnavPremium) mnavPremium.style.display = '';
+  }
+
+  // Update Notion sidebar tab if they are connected
+  const navNotion = document.getElementById('nav-notion');
+  const mnavNotion = document.getElementById('mnav-notion');
+  if (currentUser.notion_token) {
+    if (navNotion) navNotion.innerHTML = '<i class="ti ti-calendar-check" style="color:var(--green)"></i><span class="tip">Notion Linked</span>';
+    if (mnavNotion) mnavNotion.innerHTML = '<i class="ti ti-calendar-check" style="color:var(--green)"></i><span>Notion</span>';
+  } else {
+    if (navNotion) navNotion.innerHTML = '<i class="ti ti-calendar-event"></i><span class="tip">Notion Sync</span>';
+    if (mnavNotion) mnavNotion.innerHTML = '<i class="ti ti-calendar-event"></i><span>Notion Sync</span>';
+  }
+
   // Update Profile Page
   const profName = document.getElementById('profile-full-name');
   if (profName) profName.textContent = currentUser.full_name;
@@ -1651,6 +1781,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     initSupabase();
     await loadInitialData();
     enterApp();
+    if (window.location.hash) {
+      const pageId = window.location.hash.substring(1).split('?')[0];
+      const navEl = document.getElementById('nav-' + pageId) || document.getElementById('mnav-' + pageId);
+      if (document.getElementById('p-' + pageId)) {
+        showPage(pageId, navEl);
+      }
+    }
   }
 });
 
@@ -2371,8 +2508,16 @@ function appendCallChat(sender, text, isMine) {
 function showUpgradeModal(){document.getElementById('upgrade-modal').classList.remove('hidden');}
 function activatePremium(){
   document.getElementById('upgrade-modal').classList.add('hidden');
-  document.querySelector('.topbar-right .badge.bo').innerHTML='<i class="ti ti-crown"></i> Pro';
-  document.querySelector('.topbar-right .btn').style.display='none';
+  document.querySelector('.topbar-right .badge.bo').innerHTML='<i class="ti ti-crown"></i> Upgrading...';
+  apiCall('/api/auth/me', 'PATCH', { plan: 'pro' })
+    .then(() => {
+      loadInitialData(); // Refresh UI and state
+      alert('Successfully upgraded to Pro!');
+    })
+    .catch(err => {
+      alert('Upgrade failed: ' + err.message);
+      document.querySelector('.topbar-right .badge.bo').innerHTML='<i class="ti ti-crown"></i> Free';
+    });
 }
 
 // ══════════════════════════════════════
