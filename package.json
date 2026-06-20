@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "PeerLearn – Student academic & skill growth platform",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "echo 'No build step needed'"
   },
