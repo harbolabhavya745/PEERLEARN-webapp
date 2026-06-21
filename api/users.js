@@ -57,28 +57,102 @@ export default async function handler(req, res) {
       const excludeIds = (followingData || []).map(f => f.following_id);
       excludeIds.push(me.id);
 
-      let query = supabaseAdmin
-        .from('profiles')
-        .select('id, full_name, username, college, course, skills, avatar_skin, avatar_url, xp, level')
-        .not('id', 'in', `(${excludeIds.join(',')})`)
-        .limit(10);
+let query = supabaseAdmin
+  .from("profiles")
+  .select(`
+      id,
+      full_name,
+      username,
+      college,
+      course,
+      skills,
+      avatar_skin,
+      avatar_url,
+      xp,
+      level
+  `)
+  .not("id", "in", `(${excludeIds.join(",")})`);
 
-      if (me.course) query = query.eq('course', me.course);
+const { data, error } = await query;
+
+if (error) {
+  return json(res, 500, {
+    error: error.message
+  });
+}
+
+const suggestions = (data || []).map(user => {
+
+  let score = 0;
+  const reasons = [];
+
+  // Same course (small bonus instead of compulsory)
+  if (
+    me.course &&
+    user.course &&
+    me.course === user.course
+  ) {
+    score += 20;
+    reasons.push("Same course");
+  }
+
+  // Same college
+  if (
+    me.college &&
+    user.college &&
+    me.college === user.college
+  ) {
+    score += 15;
+    reasons.push("Same college");
+  }
+
+  // Shared skills
+  const mySkills = Array.isArray(me.skills)
+    ? me.skills
+    : [];
+
+  const theirSkills = Array.isArray(user.skills)
+    ? user.skills
+    : [];
+
+  const shared = mySkills.filter(skill =>
+    theirSkills.includes(skill)
+  );
+
+  if (shared.length > 0) {
+    score += shared.length * 10;
+    reasons.push(`${shared.length} shared skill${shared.length > 1 ? "s" : ""}`);
+  }
+
+  // Similar XP
+  const diff = Math.abs((me.xp || 0) - (user.xp || 0));
+
+  if (diff < 100)
+    score += 10;
+  else if (diff < 300)
+    score += 5;
+
+  return {
+    ...user,
+    match_score: score,
+    match_reason:
+      reasons.length
+        ? reasons.join(" • ")
+        : "Recommended"
+  };
+
+});
+
+suggestions.sort(
+  (a, b) => b.match_score - a.match_score
+);
+
+return json(res, 200, {
+  suggestions: suggestions.slice(0, 10)
+});
+
       
-      const { data, error } = await query;
-      if (error) {
-        // Fallback if the complex query fails
-        const { data: fallback } = await supabaseAdmin
-          .from('profiles')
-          .select('id, full_name, username, avatar_skin, avatar_url, xp, level')
-          .not('id', 'in', `(${excludeIds.join(',')})`)
-          .order('xp', { ascending: false })
-          .limit(10);
-        return json(res, 200, { suggestions: (fallback || []).map(u => ({ ...u, match_reason: 'Popular' })) });
-      }
-
-      return json(res, 200, { suggestions: (data || []).map(u => ({ ...u, match_reason: 'Recommended for you' })) });
-    }
+    } //users/suggestion line fxn ending
 
     // ── GET /api/skins ──────────────────────────────────────────────
     if (url === '/api/skins' && req.method === 'GET') {
