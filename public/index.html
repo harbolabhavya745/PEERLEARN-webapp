@@ -1126,8 +1126,8 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
         notionApi.getTodos(),
         notionApi.getEvents()
       ]);
-      const notesRes = results[0].status === 'fulfilled' ? results[0].value : { notes: [], error: results[0].reason };
-      const todosRes = results[1].status === 'fulfilled' ? results[1].value : { todos: [], error: results[1].reason };
+      const notesRes  = results[0].status === 'fulfilled' ? results[0].value : { notes: [], error: results[0].reason };
+      const todosRes  = results[1].status === 'fulfilled' ? results[1].value : { todos: [], error: results[1].reason };
       const eventsRes = results[2].status === 'fulfilled' ? results[2].value : { events: [], error: results[2].reason };
 
       document.getElementById('notion-notes-list').innerHTML = (notesRes.notes || []).map(n => `
@@ -1140,16 +1140,27 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
         </div>
       `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No notes yet</div>';
 
-      document.getElementById('notion-todos-list').innerHTML = (todosRes.todos || []).map(t => `
-        <div class="card-sm flex aic jb">
-          <div style="font-size:13px;font-weight:600">${t.title}</div>
-          <div class="flex aic gap8">
-            <span class="badge ${t.status==='Done'?'bg':'bc'}" style="font-size:10px;cursor:pointer" onclick="window.toggleTodoStatus('${t.id}', '${t.status}')" title="Click to change status">${t.status}</span>
-            <span style="font-size:11px;color:var(--text3)">${t.due_date || ''}</span>
-            <button class="btn btn-ghost btn-icon btn-sm" onclick="window.deleteNotionTodo('${t.id}')" style="color:var(--red);padding:0"><i class="ti ti-trash"></i></button>
-          </div>
-        </div>
-      `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No tasks yet</div>';
+      document.getElementById('notion-todos-list').innerHTML = (todosRes.todos || []).map(t => {
+        const isDone = t.status === 'Done';
+        const sc = isDone ? '#22c55e' : t.status === 'In progress' ? '#6366f1' : '#94a3b8';
+        const safeTitle = (t.title || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+        const safeDue   = (t.due_date || '').replace(/"/g, '&quot;');
+        let h = '<div class="card-sm todo-item" id="todo-card-' + t.id + '" data-todo-title="' + safeTitle + '" data-todo-status="' + t.status + '" data-todo-due="' + safeDue + '" style="transition:opacity .2s">';
+        h += '<div class="flex aic jb" style="gap:8px">';
+        h += '<div class="flex aic gap10" style="flex:1;min-width:0">';
+        h += '<button onclick="window.markTodoDone(\'' + t.id + '\', \'' + t.status + '\')" title="' + (isDone ? 'Mark as not started' : 'Mark as done') + '" style="flex-shrink:0;width:20px;height:20px;border-radius:50%;border:2px solid ' + sc + ';background:' + (isDone ? sc : 'transparent') + ';cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0">';
+        h += isDone ? '<i class="ti ti-check" style="font-size:11px;color:#fff"></i>' : '';
+        h += '</button>';
+        h += '<div style="font-size:13px;font-weight:600;' + (isDone ? 'text-decoration:line-through;opacity:.5;' : '') + 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (t.title || '') + '</div>';
+        h += '</div>';
+        h += '<div class="flex aic gap6" style="flex-shrink:0">';
+        h += '<span class="badge" style="font-size:10px;color:' + sc + ';border:1px solid ' + sc + ';background:transparent;cursor:pointer" onclick="window.toggleTodoStatus(\'' + t.id + '\', \'' + t.status + '\')" title="Cycle status">' + t.status + '</span>';
+        if (t.due_date) h += '<span style="font-size:11px;color:#94a3b8">' + t.due_date + '</span>';
+        h += '<button class="btn btn-ghost btn-icon btn-sm" onclick="window.openEditTodo(\'' + t.id + '\')" title="Edit task" style="padding:0"><i class="ti ti-pencil"></i></button>';
+        h += '<button class="btn btn-ghost btn-icon btn-sm" onclick="window.deleteNotionTodo(\'' + t.id + '\')" style="color:var(--red);padding:0"><i class="ti ti-trash"></i></button>';
+        h += '</div></div></div>';
+        return h;
+      }).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No tasks yet</div>';
 
       document.getElementById('notion-events-list').innerHTML = (eventsRes.events || []).map(e => `
         <div class="card-sm">
@@ -1178,6 +1189,50 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
   window.toggleTodoStatus = async (id, currentStatus) => {
     const next = currentStatus === 'Not started' ? 'In progress' : currentStatus === 'In progress' ? 'Done' : 'Not started';
     try { await notionApi.updateTodo(id, { status: next }); window.loadNotionData(); } catch(e) { alert(e.message); }
+  };
+
+  window.markTodoDone = async (id, currentStatus) => {
+    const next = currentStatus === 'Done' ? 'Not started' : 'Done';
+    const card = document.getElementById('todo-card-' + id);
+    if (card) card.style.opacity = '0.5';
+    try { await notionApi.updateTodo(id, { status: next }); window.loadNotionData(); }
+    catch(e) { if (card) card.style.opacity = '1'; alert(e.message); }
+  };
+
+  // ── Todo Edit Modal ──
+  window.openEditTodo = (id) => {
+    const card = document.getElementById('todo-card-' + id);
+    if (!card) return;
+    document.getElementById('todo-modal-id').value    = id;
+    document.getElementById('todo-modal-title').value = card.dataset.todoTitle || '';
+    const sel = document.getElementById('todo-modal-status');
+    const status = card.dataset.todoStatus || 'Not started';
+    [...sel.options].forEach(o => o.selected = o.value === status);
+    document.getElementById('todo-modal-date').value  = card.dataset.todoDue || '';
+    document.getElementById('todo-edit-modal').style.display = 'flex';
+  };
+
+  window.closeEditModal = () => {
+    document.getElementById('todo-edit-modal').style.display = 'none';
+  };
+
+  window.saveEditTodo = async () => {
+    const id      = document.getElementById('todo-modal-id').value;
+    const title   = document.getElementById('todo-modal-title').value.trim();
+    const status  = document.getElementById('todo-modal-status').value;
+    const due_date = document.getElementById('todo-modal-date').value || null;
+    if (!title) return alert('Task name cannot be empty');
+    document.getElementById('todo-modal-save').disabled = true;
+    document.getElementById('todo-modal-save').textContent = 'Saving...';
+    try {
+      await notionApi.updateTodo(id, { title, status, due_date });
+      window.closeEditModal();
+      window.loadNotionData();
+    } catch(e) {
+      alert(e.message);
+      document.getElementById('todo-modal-save').disabled = false;
+      document.getElementById('todo-modal-save').innerHTML = '<i class="ti ti-device-floppy"></i> Save';
+    }
   };
 
   window.submitNotionNote = async () => {
@@ -2820,5 +2875,37 @@ function renderSceneXP(){
     </div>`;
 }
 </script>
+<!-- ── Todo Edit Modal ── -->
+<div id="todo-edit-modal" onclick="if(event.target===this)window.closeEditModal()" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <div class="flex aic jb" style="margin-bottom:20px">
+      <h3 style="margin:0;font-size:16px">Edit Task</h3>
+      <button onclick="window.closeEditModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);line-height:1">×</button>
+    </div>
+    <input type="hidden" id="todo-modal-id">
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Task Name</label>
+        <input type="text" id="todo-modal-title" placeholder="Task name" style="width:100%;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Status</label>
+        <select id="todo-modal-status" style="width:100%;box-sizing:border-box">
+          <option value="Not started">Not started</option>
+          <option value="In progress">In progress</option>
+          <option value="Done">Done</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Due Date</label>
+        <input type="date" id="todo-modal-date" style="width:100%;box-sizing:border-box">
+      </div>
+    </div>
+    <div class="flex gap8" style="margin-top:24px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="window.closeEditModal()">Cancel</button>
+      <button class="btn btn-accent" id="todo-modal-save" onclick="window.saveEditTodo()"><i class="ti ti-device-floppy"></i> Save</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

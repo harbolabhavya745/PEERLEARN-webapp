@@ -1,6 +1,6 @@
 import { handleCors, json, requireAuth } from '../lib/middleware.js';
 import { supabaseAdmin } from '../lib/supabase.js';
-import { getNotionClient, requireNotion, createDatabases, syncUserNotion } from '../lib/notion.js';
+import { getNotionClient, requireNotion, createDatabases, syncUserNotion, findExistingPeerLearnStructure } from '../lib/notion.js';
 
 export default async function handler(req, res) {
   if (handleCors(req, res)) return;
@@ -79,44 +79,59 @@ export default async function handler(req, res) {
       }
 
       // With public OAuth, we can only create pages inside items the user shared.
-      // Find the first accessible page or database.
       const userNotion = getNotionClient(tokenData.access_token);
 
-      let parentItem = null;
-      for (let i = 0; i < 5; i++) {
-        const searchRes = await userNotion.search({});
-        // Prefer a plain page, but accept a database too
-        parentItem = searchRes.results?.find(r => r.object === 'page') || searchRes.results?.[0];
-        if (parentItem) break;
-        await new Promise(r => setTimeout(r, 1500));
+      // ── Step 1: Try to find an existing "📚 PeerLearn" hub + databases ──
+      const existing = await findExistingPeerLearnStructure(userNotion);
+
+      let hubPageId = existing.hub_page_id;
+      let dbs;
+
+      if (hubPageId) {
+        // Hub found – only create whichever databases are missing inside it
+        console.log('Reusing existing PeerLearn hub:', hubPageId);
+        dbs = await createDatabases(tokenData.access_token, hubPageId, {
+          todos_db_id:  existing.todos_db_id,
+          events_db_id: existing.events_db_id,
+          notes_db_id:  existing.notes_db_id
+        });
+      } else {
+        // ── Step 2: No hub found – create everything from scratch ──
+        // Find the first accessible page or database to place the hub inside.
+        let parentItem = null;
+        for (let i = 0; i < 5; i++) {
+          const searchRes = await userNotion.search({});
+          parentItem = searchRes.results?.find(r => r.object === 'page') || searchRes.results?.[0];
+          if (parentItem) break;
+          await new Promise(r => setTimeout(r, 1500));
+        }
+
+        if (!parentItem) {
+          throw new Error('No accessible pages or databases found. Please select at least one item when connecting Notion.');
+        }
+
+        // Create the "📚 PeerLearn" hub page
+        const hubPage = await userNotion.pages.create({
+          parent: parentItem.object === 'database'
+            ? { database_id: parentItem.id }
+            : { page_id: parentItem.id },
+          properties: parentItem.object === 'database'
+            ? { Name: { title: [{ text: { content: '📚 PeerLearn' } }] } }
+            : { title: [{ text: { content: '📚 PeerLearn' } }] }
+        });
+        hubPageId = hubPage.id;
+
+        // Create all 3 databases inside the new hub
+        dbs = await createDatabases(tokenData.access_token, hubPageId);
       }
 
-      if (!parentItem) {
-        throw new Error('No accessible pages or databases found. Please select at least one item when connecting Notion.');
-      }
-
-      // Create a "📚 PeerLearn" hub page inside the accessible item.
-      // Notion uses page_id for page parents and database_id for database parents.
-      const hubPage = await userNotion.pages.create({
-        parent: parentItem.object === 'database'
-          ? { database_id: parentItem.id }
-          : { page_id: parentItem.id },
-        properties: parentItem.object === 'database'
-          ? { Name: { title: [{ text: { content: '📚 PeerLearn' } }] } }
-          : { title: [{ text: { content: '📚 PeerLearn' } }] }
-      });
-
-      // Create 3 databases inside the hub
-      const dbs = await createDatabases(tokenData.access_token, hubPage.id);
-
-
-      // Store in profiles (state is userId)
+      // ── Store / update profile ──
       const { error: updateError } = await supabaseAdmin.from('profiles').update({
         notion_token: tokenData.access_token,
         notion_workspace_id: tokenData.workspace_id,
         notion_workspace_name: tokenData.workspace_name,
         notion_bot_id: tokenData.bot_id,
-        notion_parent_page_id: hubPage.id,
+        notion_parent_page_id: hubPageId,
         notion_todos_db_id: dbs.todos_db_id,
         notion_events_db_id: dbs.events_db_id,
         notion_notes_db_id: dbs.notes_db_id,
