@@ -63,3 +63,46 @@ body {
   cursor: pointer;
   color: var(--text);
 }
+
+.global-search{
+
+width:350px;
+margin:auto;
+position:relative;
+
+}
+
+#profileSearch{
+
+width:100%;
+padding:12px;
+border-radius:12px;
+
+}
+
+#searchResults{
+
+position:absolute;
+background:white;
+width:100%;
+max-height:350px;
+overflow:auto;
+border-radius:12px;
+box-shadow:0 5px 20px rgba(0,0,0,.15);
+
+}
+
+.search-user{
+
+display:flex;
+gap:12px;
+padding:12px;
+cursor:pointer;
+
+}
+
+.search-user:hover{
+
+background:#f5f5f5;
+
+}
