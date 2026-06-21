@@ -22,8 +22,9 @@ export default async function handler(req, res) {
       return json(res, 500, { error: 'LiveKit environment variables not configured' });
     }
 
-    // Use profile display name, fall back to user email prefix
-    const identity = req.profile?.full_name || req.user.email.split('@')[0];
+    // Embed user_id and full name in identity so frontend can link to profile
+    const namePart = req.profile?.full_name || req.user.email.split('@')[0];
+    const identity = `${req.user.id}|${namePart}`;
 
     const at = new AccessToken(apiKey, apiSecret, {
       identity,

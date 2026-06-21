@@ -938,19 +938,18 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
       <div id="notion-connection-banner"></div>
       <div id="notion-content" style="display:none">
       <div class="card mb20">
-        <h3>Shared Notes Wiki</h3>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Sync your study notes directly to your Notion Database.</p>
-        <div class="g2 mb12">
-          <input type="text" id="notion-note-title" placeholder="Note Title">
-          <input type="text" id="notion-note-subject" placeholder="Subject">
+        <div class="flex aic jb mb12">
+          <div>
+            <h3 style="margin:0">Study Notes Hub</h3>
+            <p style="font-size:13px;color:var(--text2);margin:4px 0 0 0">Create notes here, edit them in Notion, and share with peers.</p>
+          </div>
         </div>
-        <textarea id="notion-note-content" placeholder="Write your note here..." rows="4" class="mb12"></textarea>
-        <div class="flex aic gap8 mb12">
-          <input type="checkbox" id="notion-note-public" style="width:auto">
-          <label for="notion-note-public" style="margin:0;font-size:13px">Make note public (view-only)</label>
+        <div class="flex aic gap8 mb16" style="background:var(--bg3);padding:12px;border-radius:12px;border:1px solid var(--border)">
+          <input type="text" id="notion-note-title" placeholder="New note title..." style="flex:2;margin:0">
+          <input type="text" id="notion-note-subject" placeholder="Subject (e.g. Physics)" style="flex:1;margin:0">
+          <button class="btn btn-accent" onclick="window.createNotionNotePage()" style="flex-shrink:0"><i class="ti ti-plus"></i> Create Note</button>
         </div>
-        <button class="btn btn-accent" onclick="window.submitNotionNote()"><i class="ti ti-send"></i> Save to Notion</button>
-        <div id="notion-notes-list" class="mt16 flex fc gap8"></div>
+        <div id="notion-notes-list" class="flex fc gap8"></div>
       </div>
       
       <div class="card mb20">
@@ -1132,11 +1131,16 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
 
       document.getElementById('notion-notes-list').innerHTML = (notesRes.notes || []).map(n => `
         <div class="card-sm">
-          <div class="flex jb mb4">
-            <div class="flex aic gap8"><strong style="font-size:13px">${n.title}</strong><span class="badge bg" style="font-size:10px">${n.subject}</span></div>
-            <button class="btn btn-ghost btn-icon btn-sm" onclick="window.deleteNotionNote('${n.id}')" style="color:var(--red);padding:0"><i class="ti ti-trash"></i></button>
+          <div class="flex jb aic">
+            <div class="flex aic gap8"><strong style="font-size:14px">${n.title}</strong><span class="badge bg" style="font-size:10px">${n.subject}</span></div>
+            <div class="flex aic gap8">
+              <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer">
+                <input type="checkbox" ${n.is_public ? 'checked' : ''} onchange="window.toggleNotePublic('${n.id}', ${n.is_public})"> Public
+              </label>
+              <button class="btn btn-ghost btn-sm" onclick="window.open('${n.url}', '_blank')"><i class="ti ti-external-link"></i> Open in Notion</button>
+              <button class="btn btn-ghost btn-icon btn-sm" onclick="window.deleteNotionNote('${n.id}')" style="color:var(--red);padding:0"><i class="ti ti-trash"></i></button>
+            </div>
           </div>
-          <div style="font-size:12px;color:var(--text2)">${n.content}</div>
         </div>
       `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No notes yet</div>';
 
@@ -1235,20 +1239,25 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
     }
   };
 
-  window.submitNotionNote = async () => {
+  window.createNotionNotePage = async () => {
     const t = document.getElementById('notion-note-title').value;
     const s = document.getElementById('notion-note-subject').value;
-    const c = document.getElementById('notion-note-content').value;
-    const pub = document.getElementById('notion-note-public').checked;
-    if(!t || !c) return alert("Title and Content required");
+    if(!t) return alert("Note title required");
     try { 
-      await notionApi.createNote(t, c, s, pub); 
-      alert("Note synced to Notion!"); 
+      const res = await notionApi.createNote(t, s); 
+      if (res && res.note && res.note.url) {
+        window.open(res.note.url, '_blank');
+      }
       window.loadNotionData();
       document.getElementById('notion-note-title').value = '';
-      document.getElementById('notion-note-content').value = '';
+      document.getElementById('notion-note-subject').value = '';
     }
     catch (e) { alert(e.message); }
+  };
+
+  window.toggleNotePublic = async (id, isCurrentlyPublic) => {
+    try { await notionApi.updateNote(id, { is_public: !isCurrentlyPublic }); window.loadNotionData(); }
+    catch(e) { alert(e.message); }
   };
   window.submitNotionTodo = async () => {
     const t = document.getElementById('notion-todo-title').value;
@@ -1450,7 +1459,7 @@ async function loadLeaderboard() {
 
     container.innerHTML = data.leaderboard.map((u, i) => `
       <div class="flex aic jb" style="padding:4px 0">
-        <div class="flex aic gap8">
+        <div class="flex aic gap8" style="cursor:pointer" onclick="window.openUserProfile('${u.id}')">
           <div style="font-size:12px;font-weight:700;color:var(--text3);width:20px">${i + 1}</div>
           <div class="chat-ava" style="width:28px;height:28px;font-size:14px;background:var(--bg3)">${u.avatar_skin || u.full_name[0]}</div>
           <div>
@@ -2124,10 +2133,9 @@ async function loadConversations() {
         const lastMsg = conv.last_message || { content: 'No messages yet', created_at: conv.created_at };
         
         return `
-          <div class="chat-item ${activeConversationId === conv.id ? 'active' : ''}" 
-               onclick="openConversation('${conv.id}', '${conv.display_name}', '${conv.display_avatar || '👤'}')">
-            <div class="chat-ava" style="background:var(--bg3)">${conv.display_avatar || conv.display_name[0]}</div>
-            <div style="flex:1;min-width:0">
+          <div class="chat-item ${activeConversationId === conv.id ? 'active' : ''}">
+            <div class="chat-ava" style="background:var(--bg3);cursor:pointer" onclick="window.openUserProfile('${conv.target_user_id}')" title="View Profile">${conv.display_avatar || conv.display_name[0]}</div>
+            <div style="flex:1;min-width:0;cursor:pointer" onclick="openConversation('${conv.id}', '${conv.display_name}', '${conv.display_avatar || '👤'}')">
               <div class="chat-name">${conv.display_name}</div>
               <div class="chat-preview">${lastMsg.content}</div>
             </div>
@@ -2192,9 +2200,9 @@ async function handleChatSearch(query) {
 
     if (filtered.length > 0) {
       resultsDiv.innerHTML = filtered.map(u => `
-        <div class="search-result-item" onclick="startChatWith('${u.id}', '${u.full_name}', '${u.avatar_skin || '👤'}')">
-          <div class="search-result-ava" style="background:var(--bg3)">${u.avatar_skin || u.full_name[0]}</div>
-          <div style="font-size:13px;font-weight:600;color:var(--text)">${u.full_name}</div>
+        <div class="search-result-item">
+          <div class="search-result-ava" style="background:var(--bg3);cursor:pointer" onclick="window.openUserProfile('${u.id}')" title="View Profile">${u.avatar_skin || u.full_name[0]}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);flex:1;cursor:pointer" onclick="startChatWith('${u.id}', '${u.full_name}', '${u.avatar_skin || '👤'}')">${u.full_name}</div>
         </div>
       `).join('');
       resultsDiv.classList.remove('hidden');
@@ -2459,7 +2467,20 @@ function refreshParticipants() {
   if (!lkRoom) return;
   const me   = lkRoom.localParticipant;
   const others = Array.from(lkRoom.remoteParticipants.values());
-  const all  = [{ name: (me.name || me.identity) + ' (You)', mic: micOn, cam: camOn }, ...others.map(p => ({ name: p.name || p.identity, mic: true, cam: true }))];
+  
+  const parseId = (idStr) => {
+    const pts = (idStr || '').split('|');
+    return pts.length >= 2 ? { id: pts[0], name: pts.slice(1).join('|') } : { id: '', name: idStr };
+  };
+
+  const myP = parseId(me.identity);
+  const all = [
+    { id: myP.id, name: myP.name + ' (You)', mic: micOn, cam: camOn }, 
+    ...others.map(p => {
+      const rp = parseId(p.identity);
+      return { id: rp.id, name: rp.name, mic: true, cam: true };
+    })
+  ];
 
   document.querySelectorAll('.cp-tab')[0].textContent = `Participants (${all.length})`;
 
@@ -2469,8 +2490,8 @@ function refreshParticipants() {
 
   body.innerHTML = all.map(p => `
     <div class="participant-item">
-      <div class="p-ava" style="background:linear-gradient(135deg,var(--accent),var(--cyan));color:#fff;font-weight:800">${(p.name||'?')[0].toUpperCase()}</div>
-      <div class="p-name">${p.name}</div>
+      <div class="p-ava" style="background:linear-gradient(135deg,var(--accent),var(--cyan));color:#fff;font-weight:800;cursor:${p.id ? 'pointer' : 'default'}" ${p.id ? `onclick="window.openUserProfile('${p.id}')"` : ''} title="View Profile">${(p.name||'?')[0].toUpperCase()}</div>
+      <div class="p-name" style="cursor:${p.id ? 'pointer' : 'default'}" ${p.id ? `onclick="window.openUserProfile('${p.id}')"` : ''}>${p.name}</div>
       <div class="p-icons">
         <i class="ti ti-microphone${p.mic?'':'-off'}" ${p.mic?'':'style="color:var(--red)"'}></i>
         <i class="ti ti-video${p.cam?'':'-off'}" ${p.cam?'':'style="color:var(--red)"'}></i>
@@ -2874,7 +2895,71 @@ function renderSceneXP(){
       </div>
     </div>`;
 }
+
+// ── User Profile Modal ──
+window.openUserProfile = async (userId) => {
+  if (!userId) return;
+  const modal = document.getElementById('user-profile-modal');
+  modal.style.display = 'flex';
+  document.getElementById('upm-content').innerHTML = '<div style="padding:40px;text-align:center;color:var(--text2)">Loading profile...</div>';
+  
+  try {
+    const [profileRes, notesRes] = await Promise.all([
+      apiCall('/api/users/profile?id=' + userId),
+      apiCall('/api/notion/public-notes?user_id=' + userId).catch(() => ({ notes: [] }))
+    ]);
+    const p = profileRes.profile;
+    const notes = notesRes.notes || [];
+    
+    document.getElementById('upm-content').innerHTML = `
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="width:80px;height:80px;border-radius:50%;background:var(--bg3);display:inline-flex;align-items:center;justify-content:center;font-size:32px;margin-bottom:12px;border:3px solid var(--accent)">
+          ${p.avatar_skin || p.full_name[0]}
+        </div>
+        <h2 style="margin:0;font-family:'Fredoka',sans-serif;color:var(--text)">${p.full_name}</h2>
+        <div style="color:var(--text3);font-size:13px;margin-top:4px">@${p.username || 'user'} • Level ${p.level}</div>
+        ${p.bio ? `<div style="font-size:13px;color:var(--text2);margin-top:12px">${p.bio}</div>` : ''}
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:16px">
+          <div style="text-align:center"><div style="font-weight:700;color:var(--cyan)">${p.followers_count || 0}</div><div style="font-size:11px;color:var(--text3)">Followers</div></div>
+          <div style="text-align:center"><div style="font-weight:700;color:var(--cyan)">${p.following_count || 0}</div><div style="font-size:11px;color:var(--text3)">Following</div></div>
+        </div>
+      </div>
+      
+      <h3 style="font-size:14px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px">Public Study Notes</h3>
+      ${notes.length > 0 ? `
+        <div style="display:flex;flex-direction:column;gap:8px">
+          ${notes.map(n => `
+            <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-weight:600;font-size:14px;margin-bottom:4px;color:var(--text)">${n.title}</div>
+                <div style="font-size:11px;color:var(--text2)"><span class="badge bg" style="font-size:10px;padding:2px 6px">${n.subject}</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="window.open('${n.url}', '_blank')"><i class="ti ti-external-link"></i> Read</button>
+            </div>
+          `).join('')}
+        </div>
+      ` : '<div style="font-size:12px;color:var(--text3);text-align:center;padding:20px;background:var(--bg3);border-radius:10px">No public notes shared yet.</div>'}
+    `;
+  } catch (err) {
+    document.getElementById('upm-content').innerHTML = '<div style="padding:20px;color:var(--red);text-align:center">Failed to load profile.</div>';
+  }
+};
+window.closeUserProfile = () => {
+  document.getElementById('user-profile-modal').style.display = 'none';
+};
 </script>
+
+<!-- ── User Profile Modal ── -->
+<div id="user-profile-modal" onclick="if(event.target===this)window.closeUserProfile()" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.6);align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25);display:flex;flex-direction:column;max-height:85vh">
+    <div class="flex aic jb" style="padding:16px 20px;border-bottom:1px solid var(--border)">
+      <h3 style="margin:0;font-size:16px">Profile</h3>
+      <button onclick="window.closeUserProfile()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3);line-height:1">×</button>
+    </div>
+    <div id="upm-content" style="padding:20px;overflow-y:auto;flex:1"></div>
+  </div>
+</div>
+
 <!-- ── Todo Edit Modal ── -->
 <div id="todo-edit-modal" onclick="if(event.target===this)window.closeEditModal()" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:20px">
   <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:100%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,.25)">

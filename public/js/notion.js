@@ -36,9 +36,9 @@ export const notionApi = {
   },
 
   // Notes
-  async createNote(title, content, subject, is_public = false) {
+  async createNote(title, subject) {
     return this.fetchWithAuth('/api/notion/notes', {
-      method: 'POST', body: JSON.stringify({ title, content, subject, is_public })
+      method: 'POST', body: JSON.stringify({ title, subject })
     });
   },
   async getNotes() {

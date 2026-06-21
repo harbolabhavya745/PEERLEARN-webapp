@@ -59,13 +59,14 @@ export default async function handler(req, res) {
             ...conv, 
             display_name: other?.full_name, 
             display_avatar: other?.avatar_skin, 
+            target_user_id: other?.id,
             other_user: other,
             last_message: lastMsg 
           };
         }
         return { 
           ...conv, 
-          display_name: conv.name, 
+          display_name: conv.name || 'Group Chat', 
           display_avatar: conv.avatar,
           last_message: lastMsg
         };

@@ -314,6 +314,36 @@ export default async function handler(req, res) {
       }
     }
 
+    // ── PUBLIC NOTES ───────────────────────────────────────
+    if (url === '/api/notion/public-notes') {
+      const { user_id } = req.query;
+      if (!user_id) return json(res, 400, { error: 'user_id required' });
+      try {
+        const { data: targetUser } = await supabaseAdmin
+          .from('profiles')
+          .select('notion_token, notion_notes_db_id')
+          .eq('id', user_id)
+          .single();
+        if (!targetUser || !targetUser.notion_token || !targetUser.notion_notes_db_id) {
+          return json(res, 200, { notes: [] });
+        }
+        const targetNotion = getNotionClient(targetUser.notion_token);
+        const notionRes = await targetNotion.databases.query({
+          database_id: targetUser.notion_notes_db_id,
+          filter: { property: 'Public', checkbox: { equals: true } }
+        });
+        const notes = notionRes.results.slice(0, 15).map(page => ({
+          id: page.id,
+          url: page.url,
+          title: page.properties['Name']?.title?.[0]?.text?.content || 'Untitled',
+          subject: page.properties['Subject']?.select?.name || 'Other'
+        }));
+        return json(res, 200, { notes });
+      } catch (err) {
+        return json(res, 500, { error: err.message });
+      }
+    }
+
     // ── NOTES ──────────────────────────────────────────────
     if (url === '/api/notion/notes') {
       if (!requireNotion(req, res)) return;
@@ -322,22 +352,12 @@ export default async function handler(req, res) {
       if (req.method === 'GET') {
         try {
           const notionRes = await userNotion.databases.query({ database_id: req.profile.notion_notes_db_id });
-          const notes = await Promise.all(notionRes.results.slice(0, 15).map(async (page) => {
-            let content = '';
-            try {
-              const blocks = await userNotion.blocks.children.list({ block_id: page.id });
-              content = blocks.results
-                .map(b => b.paragraph?.rich_text?.[0]?.text?.content || '')
-                .join('\n');
-            } catch (e) { console.error('Error fetching block content:', e.message); }
-
-            return {
-              id: page.id,
-              title: page.properties['Name']?.title?.[0]?.text?.content || 'Untitled',
-              subject: page.properties['Subject']?.select?.name || 'Other',
-              is_public: page.properties['Public']?.checkbox || false,
-              content
-            };
+          const notes = notionRes.results.slice(0, 15).map(page => ({
+            id: page.id,
+            url: page.url,
+            title: page.properties['Name']?.title?.[0]?.text?.content || 'Untitled',
+            subject: page.properties['Subject']?.select?.name || 'Other',
+            is_public: page.properties['Public']?.checkbox || false
           }));
           return json(res, 200, { notes });
         } catch (err) { return json(res, 500, { error: err.message }); }
@@ -345,17 +365,16 @@ export default async function handler(req, res) {
 
       if (req.method === 'POST') {
         try {
-          const { title, content, subject, is_public } = req.body;
+          const { title, subject } = req.body;
           const notionPage = await userNotion.pages.create({
             parent: { database_id: req.profile.notion_notes_db_id },
             properties: {
-              'Name': { title: [{ text: { content: title || 'Untitled' } }] },
-              'Subject': { select: { name: subject || 'Other' } },
-              'Public': { checkbox: is_public || false }
-            },
-            children: [{ object: 'block', type: 'paragraph', paragraph: { rich_text: [{ text: { content: content || "" } }] } }]
+              'Name': { title: [{ text: { content: title || 'Untitled Note' } }] },
+              'Subject': { select: { name: subject || 'General' } },
+              'Public': { checkbox: false }
+            }
           });
-          return json(res, 201, { note: { id: notionPage.id, title, subject, is_public, content } });
+          return json(res, 201, { note: { id: notionPage.id, url: notionPage.url, title, subject } });
         } catch (err) { return json(res, 500, { error: err.message }); }
       }
 
