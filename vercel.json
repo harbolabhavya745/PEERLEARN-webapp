@@ -1,21 +1,25 @@
 {
   "version": 2,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/api/livekit/:path*", "destination": "/api/livekit.js" },
-    { "source": "/api/auth/:path*",    "destination": "/api/auth.js" },
-    { "source": "/api/chat/:path*",    "destination": "/api/chat.js" },
-    { "source": "/api/notes/:path*",   "destination": "/api/notes.js" },
-    { "source": "/api/users/:path*",   "destination": "/api/users.js" },
-    { "source": "/api/skins/:path*",   "destination": "/api/users.js" },
-    { "source": "/api/upload/:path*",  "destination": "/api/upload/index.js" },
-    { "source": "/api/follows/:path*", "destination": "/api/follows/index.js" },
-    { "source": "/api/quiz/:path*",    "destination": "/api/quiz/index.js" },
-    { "source": "/api/premium/:path*", "destination": "/api/premium/index.js" },
-    { "source": "/api/notion-sync",    "destination": "/api/notion.js" },
-    { "source": "/api/notion/:path*",  "destination": "/api/notion.js" },
+    { "source": "/api/livekit/:path*",        "destination": "/api/livekit.js" },
+    { "source": "/api/auth/:path*",            "destination": "/api/auth.js" },
+    { "source": "/api/chat/:path*",            "destination": "/api/chat.js" },
+    { "source": "/api/notes/:path*",           "destination": "/api/notes.js" },
+    { "source": "/api/users/:path*",           "destination": "/api/users.js" },
+    { "source": "/api/skins/:path*",           "destination": "/api/users.js" },
+    { "source": "/api/upload/:path*",          "destination": "/api/upload/index.js" },
+    { "source": "/api/follows/:path*",         "destination": "/api/follows/index.js" },
+    { "source": "/api/quiz/:path*",            "destination": "/api/quiz/index.js" },
+    { "source": "/api/premium/:path*",         "destination": "/api/premium/index.js" },
+    { "source": "/api/notion-sync",            "destination": "/api/notion.js" },
+    { "source": "/api/notion/:path*",          "destination": "/api/notion.js" },
+    { "source": "/api/gemini/:path*",          "destination": "/api/gemini.js" },
+    { "source": "/api/dashboard/:path*",       "destination": "/api/dashboard.js" },
     {
       "source": "/((?!api/).*)",
-      "destination": "/public/index.html"
+      "destination": "/index.html"
     }
   ]
 }

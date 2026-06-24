@@ -1,0 +1,6 @@
+{
+  "name": "PeerLearn Arcade",
+  "description": "A gamified, 8-bit retro peer-learning and study workspace featuring collaborative notes, daily academic quests, AI-powered study flashcards/quizzes, and custom avatar skin unlocks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

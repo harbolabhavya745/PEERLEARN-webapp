@@ -1,20 +1,38 @@
 {
-  "name": "peerlearn",
-  "version": "1.0.0",
-  "description": "PeerLearn – Student academic & skill growth platform",
+  "name": "peerlearn-arcade",
+  "version": "2.0.0",
+  "description": "PeerLearn Arcade – Gamified peer study platform with Supabase backend and Arcade UI",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "echo 'No build step needed'"
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "livekit-server-sdk": "^2.x",
-    "@google/generative-ai": "^0.11.0",
+    "@google/generative-ai": "^0.21.0",
     "@notionhq/client": "^2.2.14",
     "@supabase/supabase-js": "^2.43.0",
+    "@tailwindcss/vite": "^4.3.1",
+    "@vitejs/plugin-react": "^5.2.0",
+    "livekit-server-sdk": "^2.x",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.41.0",
     "node-fetch": "^3.3.2",
     "razorpay": "^2.9.2",
-    "supabase": "^2.98.2"
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "supabase": "^2.98.2",
+    "vite": "^6.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.4.21",
+    "tailwindcss": "^4.3.1",
+    "typescript": "~5.8.2"
   },
   "engines": {
     "node": ">=18.x"

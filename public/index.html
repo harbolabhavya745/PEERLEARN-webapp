@@ -490,7 +490,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
     <button class="nav-btn" id="nav-premium" onclick="showPage('premium',this)"><i class="ti ti-crown"></i><span class="tip">Premium</span></button>
     <button class="nav-btn" id="nav-chat" onclick="showPage('chat',this)"><i class="ti ti-message-circle"></i><span class="tip">Chat</span></button>
     <button class="nav-btn" id="nav-call" onclick="showPage('call',this)"><i class="ti ti-video"></i><span class="tip">Voice / Video</span></button>
-    <button class="nav-btn" id="nav-notion" onclick="showPage('notion',this)"><i class="ti ti-calendar-event"></i><span class="tip">Notion Sync</span></button>
+    <button class="nav-btn" id="nav-notion" onclick="showPage('notion',this)"><i class="ti ti-calendar-event"></i><span class="tip">Notion Workspace</span></button>
     <div class="nav-spacer"></div>
     <button class="dark-toggle" id="sidebar-dark-btn" onclick="toggleDark()"><i class="ti ti-moon" id="sidebar-dark-icon"></i><span class="tip" id="sidebar-dark-tip">Dark Mode</span></button>
     <div class="nav-avatar" onclick="showPage('profile',document.getElementById('nav-profile'))">A</div>
@@ -934,7 +934,7 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
 
     <!-- NOTION PAGE -->
     <div id="p-notion" class="page" style="padding:24px">
-      <div class="topbar-title" style="margin-bottom:20px">Notion Integration</div>
+      <div class="topbar-title" style="margin-bottom:20px">Notion Workspace</div>
       <div id="notion-connection-banner"></div>
       <div id="notion-content" style="display:none">
       <div class="card mb20">
@@ -2910,6 +2910,7 @@ window.openUserProfile = async (userId) => {
     ]);
     const p = profileRes.profile;
     const notes = notesRes.notes || [];
+    const totalConnections = (p.followers_count?.[0]?.count || 0) + (p.following_count?.[0]?.count || 0);
     
     document.getElementById('upm-content').innerHTML = `
       <div style="text-align:center;margin-bottom:24px">
@@ -2918,11 +2919,30 @@ window.openUserProfile = async (userId) => {
         </div>
         <h2 style="margin:0;font-family:'Fredoka',sans-serif;color:var(--text)">${p.full_name}</h2>
         <div style="color:var(--text3);font-size:13px;margin-top:4px">@${p.username || 'user'} • Level ${p.level}</div>
-        ${p.bio ? `<div style="font-size:13px;color:var(--text2);margin-top:12px">${p.bio}</div>` : ''}
-        <div style="display:flex;justify-content:center;gap:16px;margin-top:16px">
-          <div style="text-align:center"><div style="font-weight:700;color:var(--cyan)">${p.followers_count || 0}</div><div style="font-size:11px;color:var(--text3)">Followers</div></div>
-          <div style="text-align:center"><div style="font-weight:700;color:var(--cyan)">${p.following_count || 0}</div><div style="font-size:11px;color:var(--text3)">Following</div></div>
+        
+        ${p.college || p.course ? `
+        <div style="font-size:12px;color:var(--text2);margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px">
+          ${p.college ? `<span>🎓 ${p.college}</span>` : ''}
+          ${p.college && p.course ? '•' : ''}
+          ${p.course ? `<span>📖 ${p.course}</span>` : ''}
         </div>
+        ` : ''}
+
+        <div style="display:flex;justify-content:center;gap:16px;margin-top:16px">
+          <div style="text-align:center"><div style="font-weight:700;color:var(--cyan);font-size:16px">${totalConnections}</div><div style="font-size:11px;color:var(--text3)">Connections</div></div>
+          <div style="text-align:center"><div style="font-weight:700;color:var(--purple);font-size:16px">${p.quiz_count?.[0]?.count || 0}</div><div style="font-size:11px;color:var(--text3)">Quizzes Taken</div></div>
+        </div>
+        
+        ${p.bio ? `<div style="font-size:13px;color:var(--text2);margin-top:16px;padding:12px;background:var(--bg3);border-radius:8px;text-align:left">${p.bio}</div>` : ''}
+        
+        ${p.skills && p.skills.length > 0 ? `
+        <div style="margin-top:16px;text-align:left">
+          <div style="font-size:11px;font-weight:600;color:var(--text3);margin-bottom:6px;text-transform:uppercase">Skills</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${p.skills.map(s => `<span class="badge bg" style="font-size:10px">${s}</span>`).join('')}
+          </div>
+        </div>
+        ` : ''}
       </div>
       
       <h3 style="font-size:14px;border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:12px">Public Study Notes</h3>
