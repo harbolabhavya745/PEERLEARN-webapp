@@ -105,116 +105,26 @@ const AVATAR_SKINS: AvatarSkin[] = [
 
 // ─── Seed Active Peers ─────────────────────────────────────────────────────
 
-const INITIAL_PEERS: SkillProfile[] = [
-  {
-    id: "p1",
-    name: "Ada_Lovelace_8bit",
-    level: 7,
-    avatarSkin: "🧪",
-    skillsToGive: ["Recursion Theory", "Pointers"],
-    skillsToLearn: ["Organic Synthesis", "Derivatives"],
-    status: "Rerolling CS homework. Looking for alchemist partner!",
-    isOnline: true,
-    xpEarned: 1200,
-  },
-  {
-    id: "p2",
-    name: "Heisenberg_RPG",
-    level: 12,
-    avatarSkin: "🧙‍♂️",
-    skillsToGive: ["Organic Bonding", "Equilibrium"],
-    skillsToLearn: ["Recursion Theory", "Big-O Analysis"],
-    status: "Active study raid. Ready for chemistry boss!",
-    isOnline: true,
-    xpEarned: 2400,
-  },
-  {
-    id: "p3",
-    name: "Newton_Limit_Break",
-    level: 5,
-    avatarSkin: "🛡️",
-    skillsToGive: ["Limits & Tangents", "Kinematics"],
-    skillsToLearn: ["Recursion Theory"],
-    status: "Grinding physics vectors. AFK eating mana potions.",
-    isOnline: false,
-    xpEarned: 600,
-  },
-];
+const INITIAL_PEERS: SkillProfile[] = [];
 
 // ─── Seed Quests ───────────────────────────────────────────────────────────
 
-const SEED_QUESTS: Quest[] = [
-  {
-    id: "q1",
-    type: "daily",
-    title: "Scribe First Scroll",
-    description: "Write down 1 academic study note block in the Scribe Chamber.",
-    xpReward: 30,
-    goldReward: 15,
-    difficulty: Difficulty.EASY,
-    completed: false,
-    dueDate: "Today",
-  },
-  {
-    id: "q2",
-    type: "weekly",
-    title: "Conquer CS Quiz Boss",
-    description: "Successfully summon and beat any Computer Science quiz raid.",
-    xpReward: 100,
-    goldReward: 50,
-    difficulty: Difficulty.MEDIUM,
-    completed: false,
-    dueDate: "In 4 Days",
-  },
-  {
-    id: "q3",
-    type: "raid",
-    title: "Full Notion Synchronicity",
-    description:
-      "Push saved study records onto the Notion Webhook database pipeline.",
-    xpReward: 250,
-    goldReward: 120,
-    difficulty: Difficulty.HARD,
-    completed: false,
-    dueDate: "Syllabus Deadline",
-  },
-];
+const SEED_QUESTS: Quest[] = [];
 
 // ─── Seed Notes ────────────────────────────────────────────────────────────
 
-const SEED_NOTES: NoteBlock[] = [
-  {
-    id: "n1",
-    title: "Big O Time Complexity",
-    content:
-      "O(1) Constant: Same time regardless of input.\nO(log n) Logarithmic: Input halves each step (Binary Search).\nO(n) Linear: Scales with input (single loops).\nO(n²) Quadratic: Nested iterations.",
-    author: "Rusty Squire",
-    color: "green",
-    date: "06/23 10:45",
-    tags: ["computerscience", "big-o", "algorithms"],
-  },
-  {
-    id: "n2",
-    title: "Limits Calculus Cheat Sheet",
-    content:
-      "Definition: The value a function approaches as input → some point.\nL'Hôpital's Rule: If limit → 0/0 or ∞/∞, take derivative of numerator & denominator independently, then evaluate.",
-    author: "Calculus Alchemist",
-    color: "blue",
-    date: "06/23 10:50",
-    tags: ["calculus", "limits", "math"],
-  },
-];
+const SEED_NOTES: NoteBlock[] = [];
 
 // ─── Default Game State ────────────────────────────────────────────────────
 
 const DEFAULT_GAME_STATE: GameState = {
-  currentXP: 45,
+  currentXP: 0,
   level: 1,
-  goldCount: 120,
-  jewelCount: 5,
-  starCount: 15,
-  swordPower: 12,
-  playerHealth: 80,
+  goldCount: 0,
+  jewelCount: 0,
+  starCount: 0,
+  swordPower: 1,
+  playerHealth: 100,
   maxHealth: 100,
   unlockedSkins: ["rusty_novice"],
   activeSkin: "rusty_novice",
