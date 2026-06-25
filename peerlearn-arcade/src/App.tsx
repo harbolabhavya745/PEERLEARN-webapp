@@ -504,7 +504,7 @@ export default function App() {
     if (!quest) return;
 
     setQuests(prev => prev.map(q => q.id === id ? { ...q, completed: true } : q));
-    awardStats(quest.xpReward, quest.goldReward);
+    
     showToastMsg(`QUEST COMPLETED: "${quest.title}" cleared!`, "success");
   };
 
