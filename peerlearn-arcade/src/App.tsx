@@ -27,7 +27,8 @@ import {
   Shield,
   Coins,
   Gem,
-  Compass
+  Compass,
+  MessageSquare
 } from "lucide-react";
 import { 
   Difficulty, 
@@ -37,7 +38,9 @@ import {
   Flashcard, 
   QuizQuestion, 
   SkillProfile, 
-  AvatarSkin 
+  AvatarSkin,
+  AppTheme,
+  APP_THEMES
 } from "./types";
 
 import GuildHall from "./components/GuildHall";
@@ -46,6 +49,8 @@ import KnowledgeScrolls from "./components/KnowledgeScrolls";
 import QuestBook from "./components/QuestBook";
 import ScribeChamber from "./components/ScribeChamber";
 import PixelSageMascot from "./components/PixelSageMascot";
+import PeerChatDashboard from "./components/PeerChatDashboard";
+import ProfileDashboard from "./components/ProfileDashboard";
 
 // Premium Avatar Skins
 const AVATAR_SKINS: AvatarSkin[] = [
@@ -207,6 +212,49 @@ export default function App() {
     return localStorage.getItem("peerlearn_nickname") || "Rusty Squire";
   });
 
+  // College / University
+  const [college, setCollege] = useState<string>(() => {
+    return localStorage.getItem("peerlearn_college") || "Pixel Academy of Technology";
+  });
+
+  // Linked Email Address
+  const [email, setEmail] = useState<string>(() => {
+    return localStorage.getItem("peerlearn_email") || "squire@pixelguild.edu";
+  });
+
+  // Skills one knows
+  const [knownSkills, setKnownSkills] = useState<string[]>(() => {
+    const saved = localStorage.getItem("peerlearn_known_skills");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return ["Python", "Algorithms", "React"];
+  });
+
+  // Skills one wants to learn
+  const [desiredSkills, setDesiredSkills] = useState<string[]>(() => {
+    const saved = localStorage.getItem("peerlearn_desired_skills");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return ["Organic Chemistry", "Physics Limits"];
+  });
+
+  // Custom Avatar Emoji
+  const [avatarEmoji, setAvatarEmoji] = useState<string>(() => {
+    return localStorage.getItem("peerlearn_avatar_emoji") || "🛡️";
+  });
+
+  // Profile Border Frame Aura
+  const [profileFrame, setProfileFrame] = useState<string>(() => {
+    return localStorage.getItem("peerlearn_profile_frame") || "neon_green";
+  });
+
+  // Active App-wide Color Theme
+  const [activeThemeId, setActiveThemeId] = useState<string>(() => {
+    return localStorage.getItem("peerlearn_theme_id") || "green";
+  });
+
   // Main game state
   const [gameState, setGameState] = useState<GameState>(() => {
     const saved = localStorage.getItem("peerlearn_gamestate");
@@ -277,10 +325,59 @@ export default function App() {
   const [chatHistory, setChatHistory] = useState<{ role: "user" | "model"; text: string }[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
 
+  // Peer Connections Chat States
+  const [activePeerId, setActivePeerId] = useState<string | null>(null);
+  const [peerChatHistories, setPeerChatHistories] = useState<Record<string, { role: "user" | "model"; text: string }[]>>(() => {
+    const saved = localStorage.getItem("peerlearn_peer_chats");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return {
+      "p1": [
+        { role: "model", text: "BEEP BOOP! Hey there! I'm Ada_Lovelace_8bit. I'm currently hacking away at some recursion theory. Want to join my study party?" }
+      ],
+      "p2": [
+        { role: "model", text: "Yo! Heisenberg_RPG here. I'm cooking up some organic chemistry bonding formulas. Let's merge cognitive stacks!" }
+      ],
+      "p3": [
+        { role: "model", text: "Greetings, traveler. Newton_Limit_Break here. I am grinding physics vectors, but my physical avatar is currently AFK eating mana potions." }
+      ]
+    };
+  });
+  const [peerChatLoading, setPeerChatLoading] = useState<Record<string, boolean>>({});
+
   // Save states to local storage on change
   useEffect(() => {
     localStorage.setItem("peerlearn_nickname", nickname);
   }, [nickname]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_college", college);
+  }, [college]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_email", email);
+  }, [email]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_known_skills", JSON.stringify(knownSkills));
+  }, [knownSkills]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_desired_skills", JSON.stringify(desiredSkills));
+  }, [desiredSkills]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_avatar_emoji", avatarEmoji);
+  }, [avatarEmoji]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_profile_frame", profileFrame);
+  }, [profileFrame]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_theme_id", activeThemeId);
+  }, [activeThemeId]);
 
   useEffect(() => {
     localStorage.setItem("peerlearn_gamestate", JSON.stringify(gameState));
@@ -293,6 +390,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("peerlearn_notes", JSON.stringify(notes));
   }, [notes]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_peer_chats", JSON.stringify(peerChatHistories));
+  }, [peerChatHistories]);
 
   // Toast auto-dismisser
   useEffect(() => {
@@ -462,6 +563,64 @@ export default function App() {
     }, 2500);
   };
 
+  // Send interactive message to online/offline peer connection
+  const sendPeerMessage = async (peerId: string, messageText: string) => {
+    if (!messageText.trim()) return;
+
+    // Add user message to history
+    const newUserMsg = { role: "user" as const, text: messageText };
+    const currentHistory = peerChatHistories[peerId] || [];
+    const updatedHistory = [...currentHistory, newUserMsg];
+
+    setPeerChatHistories(prev => ({
+      ...prev,
+      [peerId]: updatedHistory
+    }));
+    playGameSound("chat_send");
+
+    // Find peer details
+    const peer = INITIAL_PEERS.find(p => p.id === peerId);
+
+    // Set loading
+    setPeerChatLoading(prev => ({ ...prev, [peerId]: true }));
+
+    try {
+      const response = await fetch("/api/gemini/peer-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          peerId,
+          message: messageText,
+          history: currentHistory,
+          peerName: peer?.name,
+          peerRole: peer?.status,
+          skillsToGive: peer?.skillsToGive,
+          skillsToLearn: peer?.skillsToLearn
+        })
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setPeerChatHistories(prev => ({
+          ...prev,
+          [peerId]: [...updatedHistory, { role: "model" as const, text: result.reply }]
+        }));
+        playGameSound("chat_reply");
+      } else {
+        throw new Error(result.error || "Failed to deliver scroll response");
+      }
+    } catch (e) {
+      console.error("Peer chat error:", e);
+      setPeerChatHistories(prev => ({
+        ...prev,
+        [peerId]: [...updatedHistory, { role: "model" as const, text: `[COMMUNICATION INTERRUPTED]: BEEP BOOP! Scroll delivery timeout. Please check your network connection or GEMINI_API_KEY config.` }]
+      }));
+      playGameSound("danger");
+    } finally {
+      setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
+    }
+  };
+
   // Award stats utility
   const awardStats = (xp: number, gold: number, jewels: number = 0) => {
     setGameState(prev => {
@@ -504,7 +663,7 @@ export default function App() {
     if (!quest) return;
 
     setQuests(prev => prev.map(q => q.id === id ? { ...q, completed: true } : q));
-    
+    awardStats(quest.xpReward, quest.goldReward);
     showToastMsg(`QUEST COMPLETED: "${quest.title}" cleared!`, "success");
   };
 
@@ -835,8 +994,8 @@ export default function App() {
           
           {/* Logo & Nickname */}
           <div className="flex items-center gap-3.5 text-left w-full lg:w-auto">
-            <div className="w-12 h-12 bg-blue-950 border-2 border-[#3b82f6] flex items-center justify-center text-2xl animate-pulse shrink-0">
-              🕹️
+            <div className="w-12 h-12 bg-blue-950 border-2 border-[#3b82f6] flex items-center justify-center text-2xl shrink-0 select-none">
+              {avatarEmoji}
             </div>
             <div>
               <h1 className="text-sm md:text-base font-press text-white text-retro-shadow-blue uppercase tracking-tight flex items-center gap-1.5 leading-none">
@@ -975,6 +1134,8 @@ export default function App() {
             <div className="flex flex-col gap-2.5">
               {[
                 { id: "guild_hall", label: "Guild Hall", icon: Users, color: "#10b981" },
+                { id: "hero_profile", label: "Hero Profile", icon: User, color: "#f59e0b" },
+                { id: "peer_chat", label: "Peer Chat", icon: MessageSquare, color: "#10b981" },
                 { id: "quiz_arena", label: "Quiz Arena", icon: Gamepad2, color: "#3b82f6" },
                 { id: "knowledge_scrolls", label: "Knowledge Scrolls", icon: BookOpen, color: "#ec4899" },
                 { id: "quests", label: "Quest Book", icon: ListTodo, color: "#8b5cf6" },
@@ -1101,6 +1262,50 @@ export default function App() {
                     handleTavernRest={handleTavernRest}
                     sendStudyInvitation={sendStudyInvitation}
                     INITIAL_PEERS={INITIAL_PEERS}
+                    playSound={playGameSound}
+                    onOpenChat={(peerId) => {
+                      setActivePeerId(peerId);
+                      setActiveTab("peer_chat");
+                      playGameSound("click");
+                    }}
+                  />
+                )}
+
+                {activeTab === "hero_profile" && (
+                  <ProfileDashboard
+                    gameState={gameState}
+                    setGameState={setGameState}
+                    AVATAR_SKINS={AVATAR_SKINS}
+                    nickname={nickname}
+                    setNickname={setNickname}
+                    college={college}
+                    setCollege={setCollege}
+                    email={email}
+                    setEmail={setEmail}
+                    knownSkills={knownSkills}
+                    setKnownSkills={setKnownSkills}
+                    desiredSkills={desiredSkills}
+                    setDesiredSkills={setDesiredSkills}
+                    avatarEmoji={avatarEmoji}
+                    setAvatarEmoji={setAvatarEmoji}
+                    profileFrame={profileFrame}
+                    setProfileFrame={setProfileFrame}
+                    activeThemeId={activeThemeId}
+                    setActiveThemeId={setActiveThemeId}
+                    playSound={playGameSound}
+                    showToast={showToastMsg}
+                  />
+                )}
+
+                {activeTab === "peer_chat" && (
+                  <PeerChatDashboard
+                    nickname={nickname}
+                    INITIAL_PEERS={INITIAL_PEERS}
+                    activePeerId={activePeerId}
+                    setActivePeerId={setActivePeerId}
+                    peerChatHistories={peerChatHistories}
+                    sendPeerMessage={sendPeerMessage}
+                    peerChatLoading={peerChatLoading}
                     playSound={playGameSound}
                   />
                 )}
