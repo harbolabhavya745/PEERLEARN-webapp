@@ -63,3 +63,73 @@ body {
   cursor: pointer;
   color: var(--text);
 }
+/*
+ * PeerLearn — chat-additions.css
+ * Add these rules inside the <style> tag in public/index.html
+ * (or link as a separate file in public/css/)
+ * They complement the existing chat styles; nothing here overrides them.
+ */
+
+/* ── Shimmer animation for message skeleton loading ── */
+@keyframes shimmer {
+  0%   { opacity: 0.4; }
+  50%  { opacity: 0.7; }
+  100% { opacity: 0.4; }
+}
+
+/* ── Search result item hover — already inline in JS but here for reference ── */
+.search-result-item {
+  transition: background 0.15s;
+}
+.search-result-item:hover {
+  background: var(--bg3);
+}
+
+/* ── Unread badge on sidebar conversation items ── */
+.chat-item .unread-badge {
+  min-width: 18px;
+  height: 18px;
+  border-radius: 99px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  flex-shrink: 0;
+}
+
+/* ── Typing indicator (future use) ── */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  align-self: flex-start;
+}
+.typing-indicator span {
+  width: 7px;
+  height: 7px;
+  background: var(--text3);
+  border-radius: 50%;
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+.typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+.typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0);    opacity: 0.5; }
+  30%            { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ── Empty chat state — centred vertically inside flex column ── */
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
