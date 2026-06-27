@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "motion/react";
 import { Users, MessageSquare } from "lucide-react";
 import { GameState, AvatarSkin, SkillProfile } from "../types";
@@ -6,7 +6,6 @@ import { GameState, AvatarSkin, SkillProfile } from "../types";
 interface GuildHallProps {
   gameState: GameState;
   nickname: string;
-  setNickname: (name: string) => void;
   activeSkinObj: AvatarSkin;
   handleTavernRest: () => void;
   sendStudyInvitation: (peerName: string) => void;
@@ -18,7 +17,6 @@ interface GuildHallProps {
 export default function GuildHall({
   gameState,
   nickname,
-  setNickname,
   activeSkinObj,
   handleTavernRest,
   sendStudyInvitation,
@@ -26,17 +24,6 @@ export default function GuildHall({
   playSound,
   onOpenChat
 }: GuildHallProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [tempName, setTempName] = useState(nickname);
-
-  const saveNickname = () => {
-    if (tempName.trim()) {
-      setNickname(tempName.trim());
-      setIsEditing(false);
-      playSound("coin");
-    }
-  };
-
   return (
     <div className="space-y-6">
       {/* Title block */}
@@ -60,40 +47,6 @@ export default function GuildHall({
                 <span className="text-xs text-[#10b981] font-press uppercase block">Hero Profile</span>
                 <span className="text-xl font-press text-white">{nickname}</span>
               </div>
-            </div>
-
-            {/* NICKNAME CHANGER */}
-            <div className="space-y-2 bg-black/40 p-3 border-2 border-[#10b981]/30">
-              <span className="text-[11px] text-[#10b981]/70 font-press uppercase block">
-                [Rename Character]
-              </span>
-              {isEditing ? (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={tempName}
-                    onChange={(e) => setTempName(e.target.value)}
-                    className="w-full bg-black text-[#10b981] font-pixel text-xl p-1.5 border-2 border-[#10b981] focus:outline-none"
-                    maxLength={16}
-                  />
-                  <button
-                    onClick={saveNickname}
-                    className="bg-[#10b981] text-black font-press text-[10px] px-3 border-2 border-white hover:bg-[#059669] cursor-pointer"
-                  >
-                    OK
-                  </button>
-                </div>
-              ) : (
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-pixel text-white">IGN: {nickname}</span>
-                  <button
-                    onClick={() => { setTempName(nickname); setIsEditing(true); playSound("click"); }}
-                    className="text-xs font-press text-[#10b981] hover:underline cursor-pointer"
-                  >
-                    [EDIT]
-                  </button>
-                </div>
-              )}
             </div>
 
             <div className="space-y-1 bg-[#022c22]/80 p-3 border border-[#10b981]/20 font-sans text-xs text-zinc-300 leading-relaxed">

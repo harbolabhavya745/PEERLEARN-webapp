@@ -351,6 +351,16 @@ export default function App() {
   const [nickname, setNickname] = useState<string>(() => {
     return localStorage.getItem("peerlearn_nickname") || "Rusty Squire";
   });
+  const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [tempNickname, setTempNickname] = useState("");
+
+  const saveHeroNickname = () => {
+    if (tempNickname.trim()) {
+      setNickname(tempNickname.trim());
+      playGameSound("coin");
+    }
+    setIsEditingNickname(false);
+  };
 
   // ── Game state (local, synced with Supabase periodically) ─────────────────
   const [gameState, setGameState] = useState<GameState>(() => {
@@ -1154,6 +1164,17 @@ let globalAudioCtx: any = null;
   //  QUIZ ARENA (wired to /api/quiz or /api/gemini/quiz)
   // ═══════════════════════════════════════════════════════════════════════
 
+  const resetQuiz = () => {
+    setQuizQuestions([]);
+    setCurrentQuizIdx(0);
+    setSelectedAnswerIdx(null);
+    setQuizSubmitted(false);
+    setQuizScore(0);
+    setQuizComplete(false);
+    setQuizAnswers([]);
+    setQuizAlert(null);
+  };
+
   const fetchAIQuiz = async () => {
     if (!quizTopic.trim()) {
       setQuizAlert("Input a target topic first!");
@@ -1475,9 +1496,47 @@ let globalAudioCtx: any = null;
                 <span className="text-xs text-[#3b82f6] font-press font-bold uppercase shrink-0">
                   HERO IGN:
                 </span>
-                <span className="text-lg font-pixel text-white bg-[#172554] px-2 py-0.5 border border-[#3b82f6]/30 uppercase font-bold tracking-wider">
-                  {nickname}
-                </span>
+                {isEditingNickname ? (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={tempNickname}
+                      onChange={(e) => setTempNickname(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveHeroNickname();
+                        if (e.key === "Escape") setIsEditingNickname(false);
+                      }}
+                      className="bg-black text-[#3b82f6] font-pixel text-lg px-2 py-0.5 border-2 border-[#3b82f6] focus:outline-none w-36 uppercase"
+                      maxLength={16}
+                      autoFocus
+                    />
+                    <button
+                      onClick={saveHeroNickname}
+                      className="bg-[#3b82f6] text-black font-press text-[9px] px-2 py-1 border-2 border-white hover:bg-[#2563eb] cursor-pointer uppercase"
+                    >
+                      OK
+                    </button>
+                    <button
+                      onClick={() => setIsEditingNickname(false)}
+                      className="text-zinc-500 font-press text-[9px] px-2 py-1 border-2 border-zinc-700 hover:border-zinc-500 cursor-pointer uppercase"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-lg font-pixel text-white bg-[#172554] px-2 py-0.5 border border-[#3b82f6]/30 uppercase font-bold tracking-wider">
+                      {nickname}
+                    </span>
+                    <button
+                      onClick={() => { setTempNickname(nickname); setIsEditingNickname(true); playGameSound("click"); }}
+                      className="text-[9px] font-press text-[#3b82f6] hover:text-white border border-[#3b82f6]/40 hover:border-[#3b82f6] px-1.5 py-0.5 cursor-pointer uppercase"
+                      title="Edit hero name"
+                    >
+                      ✏️
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1791,7 +1850,6 @@ let globalAudioCtx: any = null;
                   <GuildHall
                     gameState={gameState}
                     nickname={nickname}
-                    setNickname={setNickname}
                     activeSkinObj={activeSkinObj}
                     handleTavernRest={handleTavernRest}
                     sendStudyInvitation={sendStudyInvitation}
@@ -1861,6 +1919,7 @@ let globalAudioCtx: any = null;
                     quizComplete={quizComplete}
                     quizAlert={quizAlert}
                     fetchAIQuiz={fetchAIQuiz}
+                    resetQuiz={resetQuiz}
                     handleQuizAnswerSubmit={handleQuizAnswerSubmit}
                     handleQuizNext={handleQuizNext}
                     playSound={playGameSound}

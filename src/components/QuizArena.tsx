@@ -1,7 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Gamepad2, CheckCircle2, XCircle } from "lucide-react";
 import { QuizQuestion, Difficulty } from "../types";
+
+const PRESET_SUBJECTS_QUIZ = [
+  "Computer Science",
+  "Mathematics",
+  "Organic Chemistry",
+  "Physics",
+  "History",
+  "Other (specify below)",
+];
 
 interface QuizArenaProps {
   quizSubject: string;
@@ -20,6 +29,7 @@ interface QuizArenaProps {
   quizComplete: boolean;
   quizAlert: string | null;
   fetchAIQuiz: () => void;
+  resetQuiz: () => void;
   handleQuizAnswerSubmit: () => void;
   handleQuizNext: () => void;
   playSound: (type: "click" | "coin" | "levelup" | "correct" | "wrong" | "quest_complete" | "heal" | "sync" | "cast_spell" | "danger" | "chat_send" | "chat_reply") => void;
@@ -42,19 +52,19 @@ export default function QuizArena({
   quizComplete,
   quizAlert,
   fetchAIQuiz,
+  resetQuiz,
   handleQuizAnswerSubmit,
   handleQuizNext,
   playSound
 }: QuizArenaProps) {
+  const [customSubject, setCustomSubject] = useState("");
+  const isCustom = quizSubject === "Other (specify below)";
   const currentQuestion = quizQuestions[currentQuizIdx];
 
   return (
     <div className="space-y-6">
       {/* Title block */}
       <div className="border-b-4 border-dashed border-[#3b82f6]/20 pb-4">
-        <span className="text-xs text-[#3b82f6] font-press tracking-wider uppercase block">
-          MODULE 02: COMBAT COGNITION
-        </span>
         <h2 className="text-2xl md:text-3xl font-press text-[#3b82f6] text-retro-shadow-blue uppercase mt-2">
           Quiz Combat Arena
         </h2>
@@ -85,15 +95,26 @@ export default function QuizArena({
               <label className="text-[10px] text-[#3b82f6] font-press uppercase block">Subject Class</label>
               <select
                 value={quizSubject}
-                onChange={(e) => setQuizSubject(e.target.value)}
+                onChange={(e) => {
+                  setQuizSubject(e.target.value);
+                  if (e.target.value !== "Other (specify below)") setCustomSubject("");
+                }}
                 className="w-full bg-black text-white font-pixel text-lg p-2.5 border-2 border-[#3b82f6]/50 focus:border-[#3b82f6] outline-none"
               >
-                <option value="Computer Science">Computer Science</option>
-                <option value="Mathematics">Mathematics</option>
-                <option value="Organic Chemistry">Organic Chemistry</option>
-                <option value="Physics">Physics</option>
-                <option value="History">History</option>
+                {PRESET_SUBJECTS_QUIZ.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
               </select>
+              {isCustom && (
+                <input
+                  type="text"
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  placeholder="e.g. Economics, Art History..."
+                  className="w-full bg-black text-white font-pixel text-lg p-2.5 border-2 border-[#3b82f6]/50 focus:border-[#3b82f6] outline-none mt-1"
+                  autoFocus
+                />
+              )}
             </div>
 
             {/* Topic */}
@@ -127,8 +148,11 @@ export default function QuizArena({
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98, y: 3 }}
-            disabled={isGeneratingQuiz || !quizTopic.trim()}
-            onClick={fetchAIQuiz}
+            disabled={isGeneratingQuiz || !quizTopic.trim() || (isCustom && !customSubject.trim())}
+            onClick={() => {
+              if (isCustom && customSubject.trim()) setQuizSubject(customSubject.trim());
+              fetchAIQuiz();
+            }}
             className="w-full bg-[#3b82f6] text-black font-press text-xs py-3 border-2 border-white shadow-[0_4px_0_#1d4ed8] hover:bg-[#2563eb] disabled:bg-neutral-800 disabled:text-zinc-600 disabled:shadow-none cursor-pointer uppercase flex items-center justify-center gap-2"
           >
             {isGeneratingQuiz ? "Generating Challenge..." : "START CHALLENGE ⚡"}
@@ -265,14 +289,24 @@ export default function QuizArena({
                 </p>
               </div>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => { fetchAIQuiz(); }}
-                className="bg-[#3b82f6] text-black font-press text-xs py-2.5 px-6 border-2 border-white shadow-[0_3px_0_#1d4ed8] hover:bg-[#2563eb] cursor-pointer uppercase font-bold"
-              >
-                Start Another Challenge ⚡
-              </motion.button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => { fetchAIQuiz(); }}
+                  className="bg-[#3b82f6] text-black font-press text-xs py-2.5 px-6 border-2 border-white shadow-[0_3px_0_#1d4ed8] hover:bg-[#2563eb] cursor-pointer uppercase font-bold"
+                >
+                  Summon Another Raid Boss ⚡
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => { resetQuiz(); playSound("click"); }}
+                  className="bg-black text-[#3b82f6] font-press text-xs py-2.5 px-6 border-2 border-[#3b82f6] hover:bg-[#3b82f6]/10 cursor-pointer uppercase font-bold"
+                >
+                  ← Change Topic
+                </motion.button>
+              </div>
             </div>
           )}
         </div>

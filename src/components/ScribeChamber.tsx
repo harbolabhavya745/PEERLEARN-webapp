@@ -46,9 +46,6 @@ export default function ScribeChamber({
     <div className="space-y-6">
       {/* Title block */}
       <div className="border-b-4 border-dashed border-[#10b981]/20 pb-4">
-        <span className="text-xs text-[#10b981] font-press tracking-wider uppercase block">
-          MODULE 05: SYNC ARCHIVE
-        </span>
         <h2 className="text-2xl md:text-3xl font-press text-[#10b981] text-retro-shadow-green uppercase mt-2">
           My Study Notes
         </h2>

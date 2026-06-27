@@ -3,6 +3,15 @@ import { motion, AnimatePresence } from "motion/react";
 import { BookOpen, RefreshCw, CheckCircle2 } from "lucide-react";
 import { Flashcard } from "../types";
 
+const PRESET_SUBJECTS_SCROLLS = [
+  "Computer Science",
+  "Mathematics",
+  "Organic Chemistry",
+  "Physics",
+  "Biology",
+  "Other (specify below)",
+];
+
 interface KnowledgeScrollsProps {
   scrollsSubject: string;
   setScrollsSubject: (s: string) => void;
@@ -38,6 +47,8 @@ export default function KnowledgeScrolls({
   fetchAIFlashcards,
   playSound
 }: KnowledgeScrollsProps) {
+  const [customSubject, setCustomSubject] = useState("");
+  const isCustom = scrollsSubject === "Other (specify below)";
   const currentCard = flashcards[activeCardIdx];
 
   return (
@@ -77,15 +88,26 @@ export default function KnowledgeScrolls({
               <label className="text-[10px] text-[#ec4899] font-press uppercase block">Subject Field</label>
               <select
                 value={scrollsSubject}
-                onChange={(e) => setScrollsSubject(e.target.value)}
+                onChange={(e) => {
+                  setScrollsSubject(e.target.value);
+                  if (e.target.value !== "Other (specify below)") setCustomSubject("");
+                }}
                 className="w-full bg-black text-white font-pixel text-lg p-2.5 border-2 border-[#ec4899]/50 focus:border-[#ec4899] outline-none"
               >
-                <option value="Computer Science">Computer Science</option>
-                <option value="Mathematics">Mathematics</option>
-                <option value="Organic Chemistry">Organic Chemistry</option>
-                <option value="Physics">Physics</option>
-                <option value="Biology">Biology</option>
+                {PRESET_SUBJECTS_SCROLLS.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
               </select>
+              {isCustom && (
+                <input
+                  type="text"
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  placeholder="e.g. Economics, Art History..."
+                  className="w-full bg-black text-white font-pixel text-lg p-2.5 border-2 border-[#ec4899]/50 focus:border-[#ec4899] outline-none mt-1"
+                  autoFocus
+                />
+              )}
             </div>
 
             {/* Topic */}
@@ -104,8 +126,11 @@ export default function KnowledgeScrolls({
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98, y: 3 }}
-            disabled={isGeneratingScrolls || !scrollsTopic.trim()}
-            onClick={fetchAIFlashcards}
+            disabled={isGeneratingScrolls || !scrollsTopic.trim() || (isCustom && !customSubject.trim())}
+            onClick={() => {
+              if (isCustom && customSubject.trim()) setScrollsSubject(customSubject.trim());
+              fetchAIFlashcards();
+            }}
             className="w-full bg-[#ec4899] text-black font-press text-xs py-3 border-2 border-white shadow-[0_4px_0_#be185d] hover:bg-[#db2777] disabled:bg-neutral-800 disabled:text-zinc-600 disabled:shadow-none cursor-pointer uppercase flex items-center justify-center gap-2"
           >
             {isGeneratingScrolls ? "Generating Flashcards..." : "GENERATE FLASHCARDS 📖"}
