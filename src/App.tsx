@@ -110,82 +110,15 @@ const AVATAR_SKINS: AvatarSkin[] = [
 
 // ─── Seed Active Peers ─────────────────────────────────────────────────────
 
-const INITIAL_PEERS: SkillProfile[] = [
-  {
-    id: "p1",
-    name: "Alex Coder",
-    level: 12,
-    avatarSkin: "🥷",
-    skillsToGive: ["React", "JavaScript"],
-    skillsToLearn: ["Python", "DSA"],
-    status: "Grinding LeetCode...",
-    isOnline: true,
-    xpEarned: 2450
-  },
-  {
-    id: "p2",
-    name: "Sarah Science",
-    level: 9,
-    avatarSkin: "🧪",
-    skillsToGive: ["Chemistry", "Biology"],
-    skillsToLearn: ["Calculus", "Physics"],
-    status: "In the lab!",
-    isOnline: true,
-    xpEarned: 1800
-  },
-  {
-    id: "p3",
-    name: "Mike Math",
-    level: 15,
-    avatarSkin: "🧙‍♂️",
-    skillsToGive: ["Calculus", "Algebra"],
-    skillsToLearn: ["Machine Learning"],
-    status: "Solving limits.",
-    isOnline: false,
-    xpEarned: 3100
-  }
-];
+const INITIAL_PEERS: SkillProfile[] = [];
 
 // ─── Seed Quests ───────────────────────────────────────────────────────────
 
-const SEED_QUESTS: Quest[] = [
-  {
-    id: "q1",
-    type: "daily",
-    title: "Scribe First Scroll",
-    description: "Write your first note in the Scribe Chamber.",
-    xpReward: 30,
-    goldReward: 10,
-    difficulty: Difficulty.EASY,
-    completed: false,
-    dueDate: "Today"
-  },
-  {
-    id: "q2",
-    type: "weekly",
-    title: "Defeat 3 Quizzes",
-    description: "Complete 3 quizzes in the Quiz Arena.",
-    xpReward: 120,
-    goldReward: 50,
-    difficulty: Difficulty.MEDIUM,
-    completed: false,
-    dueDate: "In 7 Days"
-  }
-];
+const SEED_QUESTS: Quest[] = [];
 
 // ─── Seed Notes ────────────────────────────────────────────────────────────
 
-const SEED_NOTES: NoteBlock[] = [
-  {
-    id: "n1",
-    title: "Welcome to PeerLearn!",
-    content: "Start writing your notes here to earn XP and Gold.",
-    author: "System",
-    color: "green",
-    date: new Date().toLocaleString(),
-    tags: ["Welcome"]
-  }
-];
+const SEED_NOTES: NoteBlock[] = [];
 
 // ─── Default Game State ────────────────────────────────────────────────────
 
