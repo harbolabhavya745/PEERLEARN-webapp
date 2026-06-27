@@ -71,31 +71,28 @@ export default function PeerChatDashboard({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col h-full">
       {/* Title block */}
-      <div className="border-b-4 border-dashed border-[#10b981]/20 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="border-b-4 border-dashed border-[#10b981]/20 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
-          <span className="text-xs text-[#10b981] font-press tracking-wider uppercase block">
-            MODULE 07: MESSAGING
-          </span>
-          <h2 className="text-2xl md:text-3xl font-press text-[#10b981] text-retro-shadow-green uppercase mt-2">
-            Chat Dashboard
+          <h2 className="text-2xl md:text-3xl font-press text-[#10b981] text-retro-shadow-green uppercase">
+            Peer Connections Console
           </h2>
         </div>
         <div className="flex items-center gap-2 bg-[#022c22] border border-[#10b981]/30 p-2 font-pixel text-xs text-[#10b981]">
           <Globe className="w-4 h-4 animate-spin text-emerald-400" />
-          <span className="font-press text-[9px] uppercase">CHAT SERVER ONLINE</span>
+          <span className="font-press text-[9px] uppercase">CO-OP CHANNEL STABLE</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
         
         {/* LEFT COLUMN: PEER ROSTER & CHANNELS */}
-        <div className="col-span-1 lg:col-span-4 flex flex-col space-y-4">
-          <div className="pixel-box-green p-4 space-y-3.5 flex flex-col h-full">
+        <div className="col-span-1 lg:col-span-4 flex flex-col min-h-0">
+          <div className="pixel-box-green p-4 space-y-3.5 flex flex-col flex-1 min-h-0">
             <div className="flex items-center justify-between border-b border-[#10b981]/20 pb-2">
               <span className="text-[10px] text-white font-press uppercase flex items-center gap-1.5 font-bold">
-                <Users className="w-4 h-4 text-[#10b981]" /> Study Network
+                <Users className="w-4 h-4 text-[#10b981]" /> Study Guild Peers
               </span>
               <span className="text-[9px] font-pixel text-emerald-400 bg-black/40 px-1 border border-[#10b981]/30">
                 {INITIAL_PEERS.filter(p => p.isOnline).length} ACTIVE
@@ -107,7 +104,7 @@ export default function PeerChatDashboard({
               <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-zinc-500" />
               <input
                 type="text"
-                placeholder="Search network..."
+                placeholder="Search guild party..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-black text-[#10b981] font-pixel text-xs pl-9 p-2 border-2 border-[#10b981]/30 focus:border-[#10b981] focus:outline-none placeholder-zinc-600"
@@ -115,7 +112,7 @@ export default function PeerChatDashboard({
             </div>
 
             {/* Peers List */}
-            <div className="space-y-2 overflow-y-auto max-h-[350px] lg:max-h-[450px] pr-1 pixel-scrollbar flex-grow">
+            <div className="space-y-2 overflow-y-auto flex-1 min-h-0 pr-1 pixel-scrollbar">
               {filteredPeers.map((p) => {
                 const isActive = p.id === activePeerId;
                 const lastMsg = peerChatHistories[p.id]?.[peerChatHistories[p.id].length - 1];
@@ -175,8 +172,8 @@ export default function PeerChatDashboard({
         </div>
 
         {/* RIGHT COLUMN: CHAT WINDOW */}
-        <div className="col-span-1 lg:col-span-8">
-          <div className="pixel-box-green p-5 flex flex-col h-full min-h-[480px]">
+        <div className="col-span-1 lg:col-span-8 flex flex-col min-h-0">
+          <div className="pixel-box-green p-5 flex flex-col flex-1 min-h-0">
             {activePeer ? (
               <div className="flex flex-col h-full flex-grow space-y-4">
                 
@@ -199,18 +196,18 @@ export default function PeerChatDashboard({
                   {/* Skills summary chips */}
                   <div className="text-left sm:text-right text-[10px] font-pixel space-y-0.5">
                     <div>
-                      <span className="text-[#10b981] uppercase font-bold">Can Teach:</span>{" "}
+                      <span className="text-[#10b981] uppercase font-bold">Adept To:</span>{" "}
                       <span className="text-zinc-300">{activePeer.skillsToGive.join(", ")}</span>
                     </div>
                     <div>
-                      <span className="text-amber-400 uppercase font-bold">Wants:</span>{" "}
+                      <span className="text-amber-400 uppercase font-bold">Next Targeted Capability:</span>{" "}
                       <span className="text-zinc-300">{activePeer.skillsToLearn.join(", ")}</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Messages Panel */}
-                <div className="flex-grow bg-black/60 border-2 border-[#10b981]/15 p-4 h-[280px] lg:h-[320px] overflow-y-auto pixel-scrollbar space-y-4 flex flex-col justify-start">
+                <div className="flex-1 min-h-0 bg-black/60 border-2 border-[#10b981]/15 p-4 overflow-y-auto pixel-scrollbar space-y-4 flex flex-col justify-start">
                   <div className="text-center py-1 border-b border-dashed border-[#10b981]/10 mb-2">
                     <span className="text-[9px] font-press text-[#10b981]/50 uppercase tracking-widest flex items-center justify-center gap-2">
                       <Terminal className="w-3 h-3" /> SECURE RETRO LINK COMPLETED • LOCAL ID: {nickname}
@@ -242,7 +239,7 @@ export default function PeerChatDashboard({
                       <span className="text-[9px] font-press text-zinc-500 mb-0.5">{activePeer.name}</span>
                       <div className="bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-md rounded-tl-none p-3 text-xs font-pixel">
                         <span className="font-press text-[9px] text-[#10b981] tracking-widest uppercase animate-pulse flex items-center gap-2">
-                          <Sparkles className="w-3 h-3 text-amber-400 animate-spin" /> Sending message...
+                          <Sparkles className="w-3 h-3 text-amber-400 animate-spin" /> Casting Scroll Message...
                         </span>
                       </div>
                     </div>
@@ -259,29 +256,6 @@ export default function PeerChatDashboard({
                   <div ref={chatBottomRef} />
                 </div>
 
-                {/* Suggestion Prompt Chips */}
-                <div className="flex gap-2 overflow-x-auto py-1 shrink-0 no-scrollbar">
-                  {(activePeer.id === "p1"
-                    ? ["How do pointers work in C?", "Explain Recursion simply!", "Let's grind Computer Science quests!", "Wanna trade some Organic Chemistry knowledge?"]
-                    : activePeer.id === "p2"
-                    ? ["Explain Organic Bonding!", "Help me with chemistry formulas!", "Let's summon a Chemistry boss!", "Can you teach me Organic compounds?"]
-                    : ["Teach me Physics Kinematics!", "Explain Vectors and Limits!", "How does gravity limit break work?", "Let's level up together!"]
-                  ).map((suggest, sIdx) => (
-                    <button
-                      key={sIdx}
-                      type="button"
-                      disabled={isActiveLoading}
-                      onClick={() => {
-                        setLocalMsg("");
-                        sendPeerMessage(activePeer.id, suggest);
-                      }}
-                      className="shrink-0 text-[10px] font-pixel bg-[#022c22]/50 hover:bg-[#022c22] text-[#10b981] border border-[#10b981]/30 rounded-full px-3 py-1.5 hover:border-[#10b981] cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      "{suggest}"
-                    </button>
-                  ))}
-                </div>
-
                 {/* Input Console */}
                 <form onSubmit={handleSend} className="flex gap-2.5 pt-2 border-t border-[#10b981]/15">
                   <input
@@ -289,7 +263,7 @@ export default function PeerChatDashboard({
                     value={localMsg}
                     disabled={isActiveLoading}
                     onChange={(e) => setLocalMsg(e.target.value)}
-                    placeholder={`Send message to ${activePeer.name}...`}
+                    placeholder={`Transmit 8-bit connection scroll to ${activePeer.name}...`}
                     className="w-full bg-black text-[#10b981] font-pixel text-sm p-3 border-2 border-[#10b981]/30 focus:border-[#10b981] focus:outline-none placeholder-zinc-700 disabled:opacity-60"
                     maxLength={200}
                   />
@@ -306,7 +280,7 @@ export default function PeerChatDashboard({
             ) : (
               <div className="flex-grow flex flex-col items-center justify-center text-zinc-500 font-pixel">
                 <Compass className="w-12 h-12 text-[#10b981]/20 animate-pulse mb-3" />
-                <p className="uppercase text-sm tracking-widest">Awaiting Selection</p>
+                <p className="uppercase text-sm tracking-widest">Awaiting Scroll Signal</p>
                 <p className="text-xs text-zinc-600 uppercase mt-1">Select a study peer from the party log to begin communication.</p>
               </div>
             )}

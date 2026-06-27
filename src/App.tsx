@@ -1,14 +1,14 @@
 /**
- * PeerLearn Arcade – Main App
- * Arcade UI wired to real Supabase backend
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  Sparkles,
-  BookOpen,
-  RefreshCw,
+import { 
+  Sparkles, 
+  BookOpen, 
+  RefreshCw, 
   Trophy,
   Users,
   Zap,
@@ -28,25 +28,21 @@ import {
   Coins,
   Gem,
   Compass,
-  LogOut,
-  Loader2,
-  MessageSquare,
+  MessageSquare
 } from "lucide-react";
-import {
-  Difficulty,
-  GameState,
-  NoteBlock,
-  Quest,
-  Flashcard,
-  QuizQuestion,
-  SkillProfile,
+import { 
+  Difficulty, 
+  GameState, 
+  NoteBlock, 
+  Quest, 
+  Flashcard, 
+  QuizQuestion, 
+  SkillProfile, 
   AvatarSkin,
-  AuthUser,
   AppTheme,
   APP_THEMES
 } from "./types";
 
-import AuthScreen from "./components/AuthScreen";
 import GuildHall from "./components/GuildHall";
 import QuizArena from "./components/QuizArena";
 import KnowledgeScrolls from "./components/KnowledgeScrolls";
@@ -55,11 +51,8 @@ import ScribeChamber from "./components/ScribeChamber";
 import PixelSageMascot from "./components/PixelSageMascot";
 import PeerChatDashboard from "./components/PeerChatDashboard";
 import ProfileDashboard from "./components/ProfileDashboard";
-import { getMe, getToken, logout, refreshToken, isTokenExpired } from "./auth";
-import type { AuthUser as AU } from "./types";
 
-// ─── Avatar Skin Definitions ───────────────────────────────────────────────
-
+// Premium Avatar Skins
 const AVATAR_SKINS: AvatarSkin[] = [
   {
     id: "rusty_novice",
@@ -68,7 +61,7 @@ const AVATAR_SKINS: AvatarSkin[] = [
     spriteUrl: "🛡️",
     borderColor: "border-zinc-500",
     textColor: "text-zinc-500",
-    powerName: "Standard Grind (+0% Multiplier)",
+    powerName: "Standard Grind (+0% Multiplier)"
   },
   {
     id: "sage_alchemist",
@@ -77,7 +70,7 @@ const AVATAR_SKINS: AvatarSkin[] = [
     spriteUrl: "🧪",
     borderColor: "border-emerald-500",
     textColor: "text-emerald-400",
-    powerName: "Double Brew (+15% XP Boost)",
+    powerName: "Double Brew (+15% XP Boost)"
   },
   {
     id: "code_ninja",
@@ -86,7 +79,7 @@ const AVATAR_SKINS: AvatarSkin[] = [
     spriteUrl: "🥷",
     borderColor: "border-cyan-500",
     textColor: "text-cyan-400",
-    powerName: "Syntax Strike (+25% Star Spawn)",
+    powerName: "Syntax Strike (+25% Star Spawn)"
   },
   {
     id: "starlight_paladin",
@@ -95,7 +88,7 @@ const AVATAR_SKINS: AvatarSkin[] = [
     spriteUrl: "✨",
     borderColor: "border-amber-500",
     textColor: "text-amber-400",
-    powerName: "Sacred Focus (+50% Focus Recovery)",
+    powerName: "Sacred Focus (+50% Focus Recovery)"
   },
   {
     id: "guild_master",
@@ -108,72 +101,108 @@ const AVATAR_SKINS: AvatarSkin[] = [
   },
 ];
 
-// ─── Seed Active Peers ─────────────────────────────────────────────────────
+// Seed active peers
+const INITIAL_PEERS: SkillProfile[] = [
+  {
+    id: "p1",
+    name: "Ada_Lovelace_8bit",
+    level: 7,
+    avatarSkin: "🧪",
+    skillsToGive: ["Recursion Theory", "Pointers"],
+    skillsToLearn: ["Organic Synthesis", "Derivatives"],
+    status: "Rerolling CS homework. Looking for alchemist partner!",
+    isOnline: true,
+    xpEarned: 1200
+  },
+  {
+    id: "p2",
+    name: "Heisenberg_RPG",
+    level: 12,
+    avatarSkin: "🧙‍♂️",
+    skillsToGive: ["Organic Bonding", "Equilibrium"],
+    skillsToLearn: ["Recursion Theory", "Big-O Analysis"],
+    status: "Active study raid. Ready for chemistry boss!",
+    isOnline: true,
+    xpEarned: 2400
+  },
+  {
+    id: "p3",
+    name: "Newton_Limit_Break",
+    level: 5,
+    avatarSkin: "🛡️",
+    skillsToGive: ["Limits & Tangents", "Kinematics"],
+    skillsToLearn: ["Recursion Theory"],
+    status: "Grinding physics vectors. AFK eating mana potions.",
+    isOnline: false,
+    xpEarned: 600
+  }
+];
 
-const INITIAL_PEERS: SkillProfile[] = [];
+// Seed initial Quests
+const SEED_QUESTS: Quest[] = [
+  {
+    id: "q1",
+    type: "daily",
+    title: "Scribe First Scroll",
+    description: "Write down 1 academic study note block in the Scribe Chamber.",
+    xpReward: 30,
+    goldReward: 15,
+    difficulty: Difficulty.EASY,
+    completed: false,
+    dueDate: "Today"
+  },
+  {
+    id: "q2",
+    type: "weekly",
+    title: "Conquer CS Quiz Boss",
+    description: "Successfully summon and beat any Computer Science quiz raid.",
+    xpReward: 100,
+    goldReward: 50,
+    difficulty: Difficulty.MEDIUM,
+    completed: false,
+    dueDate: "In 4 Days"
+  },
+  {
+    id: "q3",
+    type: "raid",
+    title: "Full Notion Synchronicity",
+    description: "Push saved study records onto the simulated Notion Webhook database pipeline.",
+    xpReward: 250,
+    goldReward: 120,
+    difficulty: Difficulty.HARD,
+    completed: false,
+    dueDate: "Syllabus Deadline"
+  }
+];
 
-// ─── Seed Quests ───────────────────────────────────────────────────────────
-
-const SEED_QUESTS: Quest[] = [];
-
-// ─── Seed Notes ────────────────────────────────────────────────────────────
-
-const SEED_NOTES: NoteBlock[] = [];
-
-// ─── Default Game State ────────────────────────────────────────────────────
-
-const DEFAULT_GAME_STATE: GameState = {
-  currentXP: 0,
-  level: 1,
-  goldCount: 0,
-  jewelCount: 0,
-  starCount: 0,
-  swordPower: 1,
-  playerHealth: 100,
-  maxHealth: 100,
-  unlockedSkins: ["rusty_novice"],
-  activeSkin: "rusty_novice",
-};
-
-// ─── API helper with auth ──────────────────────────────────────────────────
-
-function authFetch(url: string, options: RequestInit = {}) {
-  const token = getToken();
-  return fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-  });
-}
-
-// ══════════════════════════════════════════════════════════════════════════
-//  MAIN APP COMPONENT
-// ══════════════════════════════════════════════════════════════════════════
+// Seed initial Notes
+const SEED_NOTES: NoteBlock[] = [
+  {
+    id: "n1",
+    title: "Big O Time Complexity",
+    content: "O(1) Constant Time: Operations take same time regardless of input size.\nO(log n) Logarithmic Time: Input decreases by half each iteration (e.g., Binary Search).\nO(n) Linear Time: Execution increases proportionally to inputs (e.g., Single loops).\nO(n²) Quadratic Time: Nested iterations.",
+    author: "Rusty Squire",
+    color: "green",
+    date: "06/23 10:45",
+    tags: ["computerscience", "big-o", "algorithms"]
+  },
+  {
+    id: "n2",
+    title: "Limits Calculus Cheat Sheet",
+    content: "Definition of a Limit: The value a function approaches as its input gets closer to some specific point.\nStandard Trick (L'Hopital's Rule): If evaluating a limit yields 0/0 or ∞/∞, take the derivative of numerator and denominator independently, then evaluate again!",
+    author: "Calculus Alchemist",
+    color: "blue",
+    date: "06/23 10:50",
+    tags: ["calculus", "limits", "math"]
+  }
+];
 
 export default function App() {
-  // ── Auth state ───────────────────────────────────────────────────────────
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  // ── Sound ────────────────────────────────────────────────────────────────
+  // Sound states
   const [isMuted, setIsMuted] = useState(false);
 
-  // ── Active tab ───────────────────────────────────────────────────────────
+  // Active Tab / View
   const [activeTab, setActiveTab] = useState<string>("guild_hall");
-  const [college, setCollege] = useState<string>("University of XYZ");
-  const [email, setEmail] = useState<string>("hero@peerlearn.edu");
-  const [knownSkills, setKnownSkills] = useState<string[]>(["React", "Node.js"]);
-  const [desiredSkills, setDesiredSkills] = useState<string[]>(["Machine Learning", "System Design"]);
-  const [avatarEmoji, setAvatarEmoji] = useState<string>("🧙‍♂️");
-  const [profileFrame, setProfileFrame] = useState<string>("emerald");
-  const [activeThemeId, setActiveThemeId] = useState<string>("green");
-  const [activePeerId, setActivePeerId] = useState<string | null>(null);
-  const [realPeers, setRealPeers] = useState<SkillProfile[]>(INITIAL_PEERS);
-  const [peerChatHistories, setPeerChatHistories] = useState<Record<string, { role: "user" | "model"; text: string }[]>>({});
-  const [peerChatLoading, setPeerChatLoading] = useState<Record<string, boolean>>({});
 
   // ── Fetch Conversations and Suggestions ──
   useEffect(() => {
@@ -210,15 +239,12 @@ export default function App() {
             level: u.level || 1,
             avatarSkin: u.avatar_skin || "🧑‍💻",
             skillsToGive: u.skills || [],
-            skillsToLearn: u.desired_skills || [],
+            skillsToLearn: [],
             status: u.course ? `Studying ${u.course}` : "Available",
             isOnline: true,
             xpEarned: u.xp || 0,
             isSuggestion: true,
-            targetUserId: u.id,
-            matchReason: u.match_reason || "Recommended",
-            college: u.college || "",
-            course: u.course || ""
+            targetUserId: u.id
           }));
           mappedPeers = [...mappedPeers, ...suggPeers];
         }
@@ -365,15 +391,67 @@ export default function App() {
     setIsEditingNickname(false);
   };
 
-  // ── Game state (local, synced with Supabase periodically) ─────────────────
+  // College / University
+  const [college, setCollege] = useState<string>(() => {
+    return localStorage.getItem("peerlearn_college") || "Pixel Academy of Technology";
+  });
+
+  // Linked Email Address
+  const [email, setEmail] = useState<string>(() => {
+    return localStorage.getItem("peerlearn_email") || "squire@pixelguild.edu";
+  });
+
+  // Skills one knows
+  const [knownSkills, setKnownSkills] = useState<string[]>(() => {
+    const saved = localStorage.getItem("peerlearn_known_skills");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return ["Python", "Algorithms", "React"];
+  });
+
+  // Skills one wants to learn
+  const [desiredSkills, setDesiredSkills] = useState<string[]>(() => {
+    const saved = localStorage.getItem("peerlearn_desired_skills");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return ["Organic Chemistry", "Physics Limits"];
+  });
+
+  // Custom Avatar Emoji
+  const [avatarEmoji, setAvatarEmoji] = useState<string>(() => {
+    return localStorage.getItem("peerlearn_avatar_emoji") || "🛡️";
+  });
+
+  // Profile Border Frame Aura
+  const [profileFrame, setProfileFrame] = useState<string>(() => {
+    return localStorage.getItem("peerlearn_profile_frame") || "neon_green";
+  });
+
+  // Active App-wide Color Theme
+  const [activeThemeId, setActiveThemeId] = useState<string>(() => {
+    return localStorage.getItem("peerlearn_theme_id") || "green";
+  });
+
+  // Main game state
   const [gameState, setGameState] = useState<GameState>(() => {
     const saved = localStorage.getItem("peerlearn_gamestate");
     if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {}
+      try { return JSON.parse(saved); } catch (e) {}
     }
-    return DEFAULT_GAME_STATE;
+    return {
+      currentXP: 45,
+      level: 4,
+      goldCount: 120,
+      jewelCount: 5,
+      starCount: 15,
+      swordPower: 12,
+      playerHealth: 80,
+      maxHealth: 100,
+      unlockedSkins: ["rusty_novice"],
+      activeSkin: "rusty_novice"
+    };
   });
 
   // ── Quests ───────────────────────────────────────────────────────────────
@@ -436,25 +514,20 @@ export default function App() {
   // ── Notes ────────────────────────────────────────────────────────────────
   const [notes, setNotes] = useState<NoteBlock[]>([]);
 
-  // ── Quiz Arena ───────────────────────────────────────────────────────────
+  // Quiz Arena States
   const [quizSubject, setQuizSubject] = useState("Computer Science");
   const [quizTopic, setQuizTopic] = useState("");
-  const [quizDifficulty, setQuizDifficulty] = useState<Difficulty>(
-    Difficulty.MEDIUM
-  );
+  const [quizDifficulty, setQuizDifficulty] = useState<Difficulty>(Difficulty.MEDIUM);
   const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [currentQuizIdx, setCurrentQuizIdx] = useState(0);
-  const [selectedAnswerIdx, setSelectedAnswerIdx] = useState<number | null>(
-    null
-  );
+  const [selectedAnswerIdx, setSelectedAnswerIdx] = useState<number | null>(null);
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
   const [quizComplete, setQuizComplete] = useState(false);
   const [quizAlert, setQuizAlert] = useState<string | null>(null);
-  const [quizAnswers, setQuizAnswers] = useState<number[]>([]);
 
-  // ── Knowledge Scrolls ────────────────────────────────────────────────────
+  // Knowledge Scrolls States
   const [scrollsSubject, setScrollsSubject] = useState("Computer Science");
   const [scrollsTopic, setScrollsTopic] = useState("");
   const [isGeneratingScrolls, setIsGeneratingScrolls] = useState(false);
@@ -469,130 +542,64 @@ export default function App() {
   const [isSyncingNotion, setIsSyncingNotion] = useState(false);
   const [notionSyncLogs, setNotionSyncLogs] = useState<string[]>([]);
 
-  // ── Mascot chat ──────────────────────────────────────────────────────────
+  // Mascot AI Chat States
   const [chatMessage, setChatMessage] = useState("");
-  const [chatHistory, setChatHistory] = useState<
-    { role: "user" | "model"; text: string }[]
-  >([]);
+  const [chatHistory, setChatHistory] = useState<{ role: "user" | "model"; text: string }[]>([]);
   const [isChatLoading, setIsChatLoading] = useState(false);
 
-  // ═══════════════════════════════════════════════════════════════════════
-  //  BOOTSTRAP: Check existing session on mount
-  // ═══════════════════════════════════════════════════════════════════════
-
-  useEffect(() => {
-    async function checkSession() {
-      const token = getToken();
-      if (!token) {
-        setAuthLoading(false);
-        return;
-      }
-
-      // Refresh if about to expire
-      if (isTokenExpired()) {
-        const refreshed = await refreshToken();
-        if (!refreshed) {
-          setAuthLoading(false);
-          return;
-        }
-      }
-
-      try {
-        const result = await getMe();
-        if (result?.profile) {
-          const p = result.profile;
-          const user: AuthUser = {
-            id: p.id,
-            email: p.email,
-            full_name: p.full_name,
-            xp: p.xp,
-            level: p.level,
-            avatar_skin: p.avatar_skin,
-            avatar_url: p.avatar_url,
-            streak: p.streak,
-          };
-          setAuthUser(user);
-          syncProfileToGameState(p);
-          if (p.full_name) {
-            setNickname(p.full_name.split(" ")[0] || p.full_name);
-          }
-        }
-      } catch {}
-
-      setAuthLoading(false);
+  // Peer Connections Chat States
+  const [activePeerId, setActivePeerId] = useState<string | null>(null);
+  const [peerChatHistories, setPeerChatHistories] = useState<Record<string, { role: "user" | "model"; text: string }[]>>(() => {
+    const saved = localStorage.getItem("peerlearn_peer_chats");
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
     }
+    return {
+      "p1": [
+        { role: "model", text: "BEEP BOOP! Hey there! I'm Ada_Lovelace_8bit. I'm currently hacking away at some recursion theory. Want to join my study party?" }
+      ],
+      "p2": [
+        { role: "model", text: "Yo! Heisenberg_RPG here. I'm cooking up some organic chemistry bonding formulas. Let's merge cognitive stacks!" }
+      ],
+      "p3": [
+        { role: "model", text: "Greetings, traveler. Newton_Limit_Break here. I am grinding physics vectors, but my physical avatar is currently AFK eating mana potions." }
+      ]
+    };
+  });
+  const [peerChatLoading, setPeerChatLoading] = useState<Record<string, boolean>>({});
 
-    checkSession();
-  }, []);
-
-  function syncProfileToGameState(profile: any) {
-    if (!profile) return;
-    setGameState((prev) => ({
-      ...prev,
-      currentXP: profile.xp !== undefined ? (profile.xp % 200) : prev.currentXP,
-      level: profile.level || prev.level,
-      goldCount: profile.gold_count ?? prev.goldCount,
-      jewelCount: profile.jewel_count ?? prev.jewelCount,
-      starCount: profile.star_count ?? prev.starCount,
-      swordPower: profile.sword_power ?? prev.swordPower,
-      playerHealth: profile.player_health ?? prev.playerHealth,
-      maxHealth: profile.max_health ?? prev.maxHealth,
-      unlockedSkins: profile.unlocked_skins ?? prev.unlockedSkins,
-      activeSkin: profile.active_skin ?? prev.activeSkin,
-    }));
-  }
-
-  // Sync game state to backend whenever it changes
-  useEffect(() => {
-    if (!authUser) return;
-    const timeoutId = setTimeout(() => {
-      // Reconstruct total XP from level and currentXP, using backend formula: level = floor(xp/200) + 1
-      const totalXp = ((gameState.level - 1) * 200) + gameState.currentXP;
-      authFetch("/api/auth/me", {
-        method: "PATCH",
-        body: JSON.stringify({
-          xp: totalXp,
-          level: gameState.level,
-          gold_count: gameState.goldCount,
-          jewel_count: gameState.jewelCount,
-          star_count: gameState.starCount,
-          sword_power: gameState.swordPower,
-          player_health: gameState.playerHealth,
-          max_health: gameState.maxHealth,
-          unlocked_skins: gameState.unlockedSkins,
-          active_skin: gameState.activeSkin,
-        }),
-      }).catch(console.error);
-    }, 1500); // Debounce sync
-
-    return () => clearTimeout(timeoutId);
-  }, [gameState, authUser]);
-
-  function handleLoginSuccess(user: AuthUser, token: string) {
-    setAuthUser(user);
-    if (user.full_name) {
-      const firstName = user.full_name.split(" ")[0] || user.full_name;
-      setNickname(firstName);
-      localStorage.setItem("peerlearn_nickname", firstName);
-    }
-    // Fetch full profile to sync game state
-    getMe().then((result) => {
-      if (result?.profile) syncProfileToGameState(result.profile);
-    });
-  }
-
-  function handleLogout() {
-    logout();
-    setAuthUser(null);
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  //  LOCAL STORAGE PERSISTENCE
-  // ═══════════════════════════════════════════════════════════════════════
-
+  // Save states to local storage on change
   useEffect(() => {
     localStorage.setItem("peerlearn_nickname", nickname);
   }, [nickname]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_college", college);
+  }, [college]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_email", email);
+  }, [email]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_known_skills", JSON.stringify(knownSkills));
+  }, [knownSkills]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_desired_skills", JSON.stringify(desiredSkills));
+  }, [desiredSkills]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_avatar_emoji", avatarEmoji);
+  }, [avatarEmoji]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_profile_frame", profileFrame);
+  }, [profileFrame]);
+
+  useEffect(() => {
+    localStorage.setItem("peerlearn_theme_id", activeThemeId);
+  }, [activeThemeId]);
 
   useEffect(() => {
     localStorage.setItem("peerlearn_gamestate", JSON.stringify(gameState));
@@ -600,7 +607,11 @@ export default function App() {
 
   // Removed localStorage sync for quests and notes
 
-  // Toast auto-dismiss
+  useEffect(() => {
+    localStorage.setItem("peerlearn_peer_chats", JSON.stringify(peerChatHistories));
+  }, [peerChatHistories]);
+
+  // Toast auto-dismisser
   useEffect(() => {
     if (toast) {
       const timer = setTimeout(() => setToast(null), 4000);
@@ -669,52 +680,37 @@ let globalAudioCtx: any = null;
       
       const ctx = globalAudioCtx;
 
-      const playTone = (
-        freq: number,
-        duration: number,
-        oscType: OscillatorType = "sine",
-        delay = 0,
-        startVol = 0.08,
-        endVol = 0.001
-      ) => {
+      const playTone = (freq: number, duration: number, oscType: OscillatorType = "sine", delay = 0, startVol = 0.08, endVol = 0.001) => {
         const osc = ctx.createOscillator();
         const gainNode = ctx.createGain();
+        
         osc.type = oscType;
         osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+        
         gainNode.gain.setValueAtTime(startVol, ctx.currentTime + delay);
-        gainNode.gain.exponentialRampToValueAtTime(
-          endVol,
-          ctx.currentTime + delay + duration
-        );
+        gainNode.gain.exponentialRampToValueAtTime(endVol, ctx.currentTime + delay + duration);
+        
         osc.connect(gainNode);
         gainNode.connect(ctx.destination);
+        
         osc.start(ctx.currentTime + delay);
         osc.stop(ctx.currentTime + delay + duration);
       };
 
-      const playFrequencySweep = (
-        startFreq: number,
-        endFreq: number,
-        duration: number,
-        oscType: OscillatorType = "sine",
-        delay = 0,
-        startVol = 0.08
-      ) => {
+      const playFrequencySweep = (startFreq: number, endFreq: number, duration: number, oscType: OscillatorType = "sine", delay = 0, startVol = 0.08) => {
         const osc = ctx.createOscillator();
         const gainNode = ctx.createGain();
+        
         osc.type = oscType;
         osc.frequency.setValueAtTime(startFreq, ctx.currentTime + delay);
-        osc.frequency.exponentialRampToValueAtTime(
-          endFreq,
-          ctx.currentTime + delay + duration
-        );
+        osc.frequency.exponentialRampToValueAtTime(endFreq, ctx.currentTime + delay + duration);
+        
         gainNode.gain.setValueAtTime(startVol, ctx.currentTime + delay);
-        gainNode.gain.exponentialRampToValueAtTime(
-          0.001,
-          ctx.currentTime + delay + duration
-        );
+        gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+        
         osc.connect(gainNode);
         gainNode.connect(ctx.destination);
+        
         osc.start(ctx.currentTime + delay);
         osc.stop(ctx.currentTime + delay + duration);
       };
@@ -728,9 +724,13 @@ let globalAudioCtx: any = null;
           playTone(1318.51, 0.25, "square", 0.08, 0.05);
           break;
         case "levelup":
-          [523.25, 659.25, 783.99, 1046.5, 1318.51, 1567.98, 2093.0].forEach(
-            (f, i) => playTone(f, i === 6 ? 0.4 : 0.1, "square", i * 0.08, 0.05)
-          );
+          playTone(523.25, 0.1, "square", 0.0, 0.05);
+          playTone(659.25, 0.1, "square", 0.08, 0.05);
+          playTone(783.99, 0.1, "square", 0.16, 0.05);
+          playTone(1046.50, 0.1, "square", 0.24, 0.05);
+          playTone(1318.51, 0.1, "square", 0.32, 0.05);
+          playTone(1567.98, 0.15, "square", 0.40, 0.05);
+          playTone(2093.00, 0.4, "square", 0.48, 0.05);
           break;
         case "correct":
           playTone(523.25, 0.15, "triangle", 0, 0.05);
@@ -744,13 +744,16 @@ let globalAudioCtx: any = null;
         case "quest_complete":
           playTone(523.25, 0.12, "square", 0, 0.05);
           playTone(523.25, 0.12, "square", 0.15, 0.05);
-          playTone(783.99, 0.15, "square", 0.3, 0.05);
-          playTone(1046.5, 0.4, "square", 0.45, 0.05);
+          playTone(783.99, 0.15, "square", 0.30, 0.05);
+          playTone(1046.50, 0.4, "square", 0.45, 0.05);
           break;
         case "heal":
-          [261.63, 329.63, 392, 523.25, 659.25, 783.99].forEach((f, i) =>
-            playTone(f, i === 5 ? 0.4 : 0.25, "sine", i * 0.06, 0.08)
-          );
+          playTone(261.63, 0.25, "sine", 0.0, 0.08);
+          playTone(329.63, 0.25, "sine", 0.06, 0.08);
+          playTone(392.00, 0.25, "sine", 0.12, 0.08);
+          playTone(523.25, 0.25, "sine", 0.18, 0.08);
+          playTone(659.25, 0.25, "sine", 0.24, 0.08);
+          playTone(783.99, 0.4, "sine", 0.30, 0.08);
           break;
         case "sync":
           playFrequencySweep(300, 1800, 0.6, "sine", 0, 0.06);
@@ -771,73 +774,26 @@ let globalAudioCtx: any = null;
           playTone(987.77, 0.2, "triangle", 0.1, 0.05);
           break;
       }
-    } catch {}
+    } catch (e) {}
   };
 
-  const showToastMsg = (
-    msg: string,
-    type: "success" | "error" | "info" = "info"
-  ) => {
+  const showToastMsg = (msg: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message: msg, type });
     if (type === "success") playGameSound("correct");
     else if (type === "error") playGameSound("wrong");
     else playGameSound("click");
   };
 
-  // ═══════════════════════════════════════════════════════════════════════
-  //  AWARD STATS (local + Supabase)
-  // ═══════════════════════════════════════════════════════════════════════
-
-  const awardStats = useCallback(
-    (xp: number, gold: number, jewels: number = 0) => {
-      setGameState((prev) => {
-        const activeSkinObj =
-          AVATAR_SKINS.find((s) => s.id === prev.activeSkin) || AVATAR_SKINS[0];
-        let xpMultiplier = 1;
-        if (activeSkinObj.id === "sage_alchemist") xpMultiplier = 1.15;
-
-        const finalXP = Math.round(xp * xpMultiplier);
-        const totalXP = prev.currentXP + finalXP;
-        const xpNeeded = 200; // Each level requires exactly 200 XP
-        let finalLvl = prev.level;
-        let leftoverXP = totalXP;
-
-        if (totalXP >= xpNeeded) {
-          finalLvl += 1;
-          leftoverXP = totalXP - xpNeeded;
-          setTimeout(() => {
-            showToastMsg(
-              `LEVEL UP! You ascended to Level ${finalLvl}! 🌟`,
-              "success"
-            );
-            playGameSound("levelup");
-          }, 800);
-        }
-
-        return {
-          ...prev,
-          currentXP: leftoverXP,
-          level: finalLvl,
-          goldCount: prev.goldCount + gold,
-          jewelCount: prev.jewelCount + jewels,
-          starCount: prev.starCount + 1,
-        };
-      });
-    },
-    [isMuted]
-  );
-
-  // ─── Tavern Rest ─────────────────────────────────────────────────────────
-
+  // Rest state helper
   const handleTavernRest = () => {
     if (gameState.goldCount < 10) {
       showToastMsg("GOLD DEFICIT: Rest requires 10 Gold Coins!", "error");
       return;
     }
-    setGameState((prev) => ({
+    setGameState(prev => ({
       ...prev,
       goldCount: prev.goldCount - 10,
-      playerHealth: prev.maxHealth,
+      playerHealth: prev.maxHealth
     }));
     showToastMsg(
       "REST AREA: Health restored to maximum!",
@@ -846,40 +802,36 @@ let globalAudioCtx: any = null;
     playGameSound("heal");
   };
 
-  // ─── Send Study Invitation ────────────────────────────────────────────────
-
+  // Send interactive invitation to peer
   const sendStudyInvitation = (peerName: string) => {
     showToastMsg(
       `INVITATION: Sent study invite to ${peerName}!`,
       "success"
     );
     playGameSound("cast_spell");
+    
+    // Simulate peer accepting after 2.5 seconds
     setTimeout(() => {
-      setGameState((prev) => {
+      setGameState(prev => {
         const bonusXP = 25;
         const newXP = prev.currentXP + bonusXP;
-        const xpNeeded = prev.level * 200;
+        const xpNeeded = prev.level * 100;
         let finalLvl = prev.level;
         let finalXP = newXP;
+        
         if (newXP >= xpNeeded) {
           finalLvl += 1;
           finalXP = newXP - xpNeeded;
-          setTimeout(
-            () =>
-              showToastMsg(
-                `LEVEL UP! You ascended to Level ${finalLvl}! 🌟`,
-                "success"
-              ),
-            500
-          );
+          setTimeout(() => showToastMsg(`LEVEL UP! You ascended to Level ${finalLvl}! 🌟`, "success"), 500);
         }
+        
         playGameSound("coin");
         return {
           ...prev,
           currentXP: finalXP,
           level: finalLvl,
           goldCount: prev.goldCount + 15,
-          starCount: prev.starCount + 1,
+          starCount: prev.starCount + 1
         };
       });
       showToastMsg(
@@ -889,16 +841,15 @@ let globalAudioCtx: any = null;
     }, 2500);
   };
 
-  // ═══════════════════════════════════════════════════════════════════════
-  //  QUESTS
-  // ═══════════════════════════════════════════════════════════════════════
+  // Send interactive message to online/offline peer connection
+  const sendPeerMessage = async (peerId: string, messageText: string) => {
+    if (!messageText.trim()) return;
 
   const completeQuest = async (id: string) => {
     const quest = quests.find((q) => q.id === id);
     if (!quest) return;
-    setQuests((prev) =>
-      prev.map((q) => (q.id === id ? { ...q, completed: true } : q))
-    );
+
+    setQuests(prev => prev.map(q => q.id === id ? { ...q, completed: true } : q));
     awardStats(quest.xpReward, quest.goldReward);
     showToastMsg(`QUEST COMPLETED: "${quest.title}" cleared!`, "success");
     playGameSound("quest_complete");
@@ -955,13 +906,14 @@ let globalAudioCtx: any = null;
       type: qType,
       title,
       description: desc,
-      xpReward: xpMap[diff],
-      goldReward: goldMap[diff],
+      xpReward: xp,
+      goldReward: gold,
       difficulty: diff,
       completed: false,
       dueDate,
     };
-    setQuests((prev) => [newQ, ...prev]);
+
+    setQuests(prev => [newQ, ...prev]);
     showToastMsg(`NEW QUEST: "${title}" added to objective log!`, "success");
 
     if (authUser) {
@@ -1103,7 +1055,7 @@ let globalAudioCtx: any = null;
       showToastMsg("EMPTY NOTES: Write at least 1 note to broadcast!", "error");
       return;
     }
-
+    
     setIsSyncingNotion(true);
     setNotionSyncLogs([]);
     playGameSound("cast_spell");
@@ -1132,7 +1084,9 @@ let globalAudioCtx: any = null;
 
     syncSteps.forEach((step, idx) => {
       setTimeout(() => {
-        setNotionSyncLogs((prev) => [...prev, step]);
+        setNotionSyncLogs(prev => [...prev, step]);
+        
+        // Custom rapid retro handshake sweep
         if (!isMuted) {
           try {
             const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
@@ -1149,9 +1103,9 @@ let globalAudioCtx: any = null;
               osc.start();
               osc.stop(ctx.currentTime + 0.08);
             }
-          } catch {}
+          } catch (e) {}
         }
-
+        
         if (idx === syncSteps.length - 1) {
           setIsSyncingNotion(false);
           awardStats(180, 80, 2);
@@ -1183,6 +1137,7 @@ let globalAudioCtx: any = null;
       setQuizAlert("Input a target topic first!");
       return;
     }
+
     setIsGeneratingQuiz(true);
     setQuizAlert(null);
     setQuizQuestions([]);
@@ -1191,26 +1146,19 @@ let globalAudioCtx: any = null;
     setQuizSubmitted(false);
     setQuizScore(0);
     setQuizComplete(false);
-    setQuizAnswers([]);
     playGameSound("cast_spell");
 
     try {
-      // Use authenticated backend endpoint if logged in, otherwise use arcade's Gemini endpoint
-      const endpoint = authUser ? "/api/quiz" : "/api/gemini/quiz";
-      const body = authUser
-        ? JSON.stringify({
-            action: "generate",
-            topic: quizTopic,
-            difficulty: quizDifficulty.toLowerCase(),
-            count: 5,
-          })
-        : JSON.stringify({
-            subject: quizSubject,
-            topic: quizTopic,
-            difficulty: quizDifficulty,
-          });
+      const response = await fetch("/api/gemini/quiz", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: quizSubject,
+          topic: quizTopic,
+          difficulty: quizDifficulty
+        })
+      });
 
-      const response = await authFetch(endpoint, { method: "POST", body });
       const resData = await response.json();
 
       // Handle both response formats
@@ -1236,14 +1184,12 @@ let globalAudioCtx: any = null;
           "success"
         );
       } else {
-        throw new Error("No questions returned");
+        throw new Error(resData.error || "Malformed quiz payload");
       }
     } catch (e: any) {
       console.error(e);
-      setQuizAlert(
-        "API transmission issue. Check your connection or try again."
-      );
-      showToastMsg("API FAILED: Could not generate quiz.", "error");
+      setQuizAlert("API transmission issue. Reloading backup local mock quest...");
+      showToastMsg("API FAILED: Running fallback local quiz.", "error");
     } finally {
       setIsGeneratingQuiz(false);
     }
@@ -1251,18 +1197,18 @@ let globalAudioCtx: any = null;
 
   const handleQuizAnswerSubmit = () => {
     if (selectedAnswerIdx === null || !quizQuestions[currentQuizIdx]) return;
+    
     setQuizSubmitted(true);
     const currentQ = quizQuestions[currentQuizIdx];
-    setQuizAnswers((prev) => [...prev, selectedAnswerIdx]);
-
+    
     if (selectedAnswerIdx === currentQ.answerIndex) {
-      setQuizScore((prev) => prev + 1);
+      setQuizScore(prev => prev + 1);
       showToastMsg("CRITICAL LEARNING STRIKE! Correct answer.", "success");
       playGameSound("correct");
     } else {
-      setGameState((prev) => {
-        const damage =
-          quizDifficulty === Difficulty.LEGENDARY ? 25 : 15;
+      // Penalize health
+      setGameState(prev => {
+        const damage = quizDifficulty === Difficulty.LEGENDARY ? 25 : 15;
         const nextHealth = Math.max(0, prev.playerHealth - damage);
         if (nextHealth === 0) {
           setTimeout(
@@ -1279,70 +1225,42 @@ let globalAudioCtx: any = null;
         }
         return { ...prev, playerHealth: nextHealth };
       });
-      showToastMsg(
-        "SPELL FAILED: Incorrect answer. Health depleted!",
-        "error"
-      );
+      showToastMsg("SPELL FAILED: Incorrect answer. Health depleted!", "error");
       playGameSound("wrong");
     }
   };
 
-  const handleQuizNext = async () => {
+  const handleQuizNext = () => {
     if (currentQuizIdx < quizQuestions.length - 1) {
-      setCurrentQuizIdx((prev) => prev + 1);
+      setCurrentQuizIdx(prev => prev + 1);
       setSelectedAnswerIdx(null);
       setQuizSubmitted(false);
       playGameSound("click");
     } else {
       setQuizComplete(true);
-      const finalScore = quizScore + (selectedAnswerIdx === quizQuestions[currentQuizIdx]?.answerIndex ? 0 : 0); // already counted
+      // Award grand statistics
       let goldBonus = 25;
       let xpBonus = 60;
-      if (quizDifficulty === Difficulty.HARD) {
-        goldBonus = 50;
-        xpBonus = 120;
-      }
-      if (quizDifficulty === Difficulty.LEGENDARY) {
-        goldBonus = 100;
-        xpBonus = 250;
-      }
+      if (quizDifficulty === Difficulty.HARD) { goldBonus = 50; xpBonus = 120; }
+      if (quizDifficulty === Difficulty.LEGENDARY) { goldBonus = 100; xpBonus = 250; }
+      
       awardStats(xpBonus, goldBonus, 1);
-
-      // Submit to backend if authenticated
-      if (authUser) {
-        try {
-          await authFetch("/api/quiz", {
-            method: "POST",
-            body: JSON.stringify({
-              action: "submit",
-              topic: quizTopic,
-              questions: quizQuestions,
-              answers: [...quizAnswers, selectedAnswerIdx ?? -1],
-              score: quizScore,
-              total: quizQuestions.length,
-            }),
-          });
-        } catch {}
-      }
-
-      const qQuest = quests.find(
-        (q) => q.title === "Conquer CS Quiz Boss" && !q.completed
-      );
+      
+      // Auto-complete quest
+      const qQuest = quests.find(q => q.title === "Conquer CS Quiz Boss" && !q.completed);
       if (qQuest && quizSubject === "Computer Science") {
         setTimeout(() => completeQuest(qQuest.id), 1200);
       }
     }
   };
 
-  // ═══════════════════════════════════════════════════════════════════════
-  //  FLASHCARDS
-  // ═══════════════════════════════════════════════════════════════════════
-
+  // AI Flashcards via express endpoint
   const fetchAIFlashcards = async () => {
     if (!scrollsTopic.trim()) {
       setScrollsAlert("Input a target theme first!");
       return;
     }
+
     setIsGeneratingScrolls(true);
     setScrollsAlert(null);
     setFlashcards([]);
@@ -1354,8 +1272,12 @@ let globalAudioCtx: any = null;
       const response = await fetch("/api/gemini/flashcards", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject: scrollsSubject, topic: scrollsTopic }),
+        body: JSON.stringify({
+          subject: scrollsSubject,
+          topic: scrollsTopic
+        })
       });
+
       const resData = await response.json();
       if (resData.success && Array.isArray(resData.data)) {
         setFlashcards(resData.data);
@@ -1364,7 +1286,7 @@ let globalAudioCtx: any = null;
           "success"
         );
       } else {
-        throw new Error(resData.error || "Malformed payload");
+        throw new Error(resData.error || "Malformed flashcards payload");
       }
     } catch {
       setScrollsAlert(
@@ -1378,7 +1300,7 @@ let globalAudioCtx: any = null;
 
   const markCardMastered = (id: string) => {
     if (masteredCards.includes(id)) return;
-    setMasteredCards((prev) => [...prev, id]);
+    setMasteredCards(prev => [...prev, id]);
     awardStats(25, 12);
     showToastMsg(
       "FLASHCARD MASTERED: Study intelligence upgraded! +25 XP / +12 Gold",
@@ -1386,16 +1308,14 @@ let globalAudioCtx: any = null;
     );
   };
 
-  // ═══════════════════════════════════════════════════════════════════════
-  //  MASCOT CHAT
-  // ═══════════════════════════════════════════════════════════════════════
-
+  // AI Mascot Chat via express endpoint
   const handleMascotChat = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatMessage.trim() || isChatLoading) return;
+
     const userText = chatMessage.trim();
     setChatMessage("");
-    setChatHistory((prev) => [...prev, { role: "user", text: userText }]);
+    setChatHistory(prev => [...prev, { role: "user", text: userText }]);
     setIsChatLoading(true);
     playGameSound("chat_send");
 
@@ -1403,26 +1323,27 @@ let globalAudioCtx: any = null;
       const response = await fetch("/api/gemini/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userText, history: chatHistory }),
+        body: JSON.stringify({
+          message: userText,
+          history: chatHistory
+        })
       });
+
       const resData = await response.json();
       if (resData.success && resData.reply) {
-        setChatHistory((prev) => [
-          ...prev,
-          { role: "model", text: resData.reply },
-        ]);
+        setChatHistory(prev => [...prev, { role: "model", text: resData.reply }]);
         playGameSound("chat_reply");
       } else {
-        throw new Error(resData.error || "No reply");
+        throw new Error(resData.error || "Malformed chat payload");
       }
-    } catch {
+    } catch (e) {
       showToastMsg("CHAT NODES DISCONNECTED: Running fallback mascot.", "error");
-      setChatHistory((prev) => [
+      setChatHistory(prev => [
         ...prev,
         {
           role: "model",
-          text: "[RECOVERY SIGNAL]: BEEP BOOP! Pixel Sage core buffer timeout! Verify your GEMINI_API_KEY is configured.",
-        },
+          text: "[RECOVERY SIGNAL]: BEEP BOOP! Pixel Sage core buffer timeout! To activate deep dynamic conversations with me, please verify your process.env.GEMINI_API_KEY is configured."
+        }
       ]);
     } finally {
       setIsChatLoading(false);
@@ -1432,6 +1353,7 @@ let globalAudioCtx: any = null;
   const triggerStudySpell = (prompt: string) => {
     if (isChatLoading) return;
     setChatMessage(prompt);
+    // Submit programmatically in next microtask
     setTimeout(() => {
       const form = document.getElementById("mascot-form") as HTMLFormElement;
       if (form) form.requestSubmit();
@@ -1475,178 +1397,162 @@ let globalAudioCtx: any = null;
   // ═══════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="min-h-screen bg-[#080710] text-zinc-100 p-3 sm:p-5 font-sans relative overflow-x-hidden select-none crt-screen crt-scanlines">
-      <div className="max-w-7xl mx-auto space-y-6">
-
-        {/* ═══════════════════════════════════════════════════════════════
-            RETRO ARCADE HUD PANEL
-        ═══════════════════════════════════════════════════════════════ */}
-        <header className="border-4 border-[#3b82f6] shadow-[0_5px_0_#1d4ed8] bg-black p-4 flex flex-col lg:flex-row justify-between items-center gap-4 relative z-10">
-
-          {/* Logo & Nickname */}
-          <div className="flex items-center gap-3.5 text-left w-full lg:w-auto">
-            <div className="w-12 h-12 bg-blue-950 border-2 border-[#3b82f6] flex items-center justify-center text-2xl animate-pulse shrink-0">
-              🕹️
+    <div className="min-h-screen bg-[#080710] text-zinc-100 p-1.5 sm:p-2.5 font-sans relative overflow-x-hidden select-none crt-screen crt-scanlines">
+      <div className="w-full max-w-full space-y-4">
+        
+        {/* ======================================================== */}
+        {/* RETRO ARCADE HUD PANEL */}
+        {/* ======================================================== */}
+        {activeTab === "guild_hall" && (
+          <header className="border-4 border-[#3b82f6] shadow-[0_5px_0_#1d4ed8] bg-black p-4 flex flex-col lg:flex-row justify-between items-center gap-4 relative z-10 animate-fade-in">
+            
+            {/* Logo & Nickname */}
+            <div className="flex items-center gap-3.5 text-left w-full lg:w-auto">
+              <div className="w-12 h-12 bg-blue-950 border-2 border-[#3b82f6] flex items-center justify-center text-2xl shrink-0 select-none">
+                {avatarEmoji}
+              </div>
+              <div>
+                <h1 className="text-sm md:text-base font-press text-white text-retro-shadow-blue uppercase tracking-tight flex items-center gap-1.5 leading-none">
+                  <span>PeerLearn Arcade</span>
+                  <span className="text-amber-400 font-pixel text-xl bg-blue-950 px-1 border border-blue-500">v1.4</span>
+                </h1>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-xs text-[#3b82f6] font-press font-bold uppercase shrink-0">
+                    HERO IGN:
+                  </span>
+                  {isEditingNickname ? (
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        value={tempNickname}
+                        onChange={(e) => setTempNickname(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveHeroNickname();
+                          if (e.key === "Escape") setIsEditingNickname(false);
+                        }}
+                        className="bg-black text-[#3b82f6] font-pixel text-lg px-2 py-0.5 border-2 border-[#3b82f6] focus:outline-none w-36 uppercase"
+                        maxLength={16}
+                        autoFocus
+                      />
+                      <button
+                        onClick={saveHeroNickname}
+                        className="bg-[#3b82f6] text-black font-press text-[9px] px-2 py-1 border-2 border-white hover:bg-[#2563eb] cursor-pointer uppercase"
+                      >
+                        OK
+                      </button>
+                      <button
+                        onClick={() => setIsEditingNickname(false)}
+                        className="text-zinc-500 font-press text-[9px] px-2 py-1 border-2 border-zinc-700 hover:border-zinc-500 cursor-pointer uppercase"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-lg font-pixel text-white bg-[#172554] px-2 py-0.5 border border-[#3b82f6]/30 uppercase font-bold tracking-wider">
+                        {nickname}
+                      </span>
+                      <button
+                        onClick={() => { setTempNickname(nickname); setIsEditingNickname(true); playGameSound("click"); }}
+                        className="text-[9px] font-press text-[#3b82f6] hover:text-white border border-[#3b82f6]/40 hover:border-[#3b82f6] px-1.5 py-0.5 cursor-pointer uppercase"
+                        title="Edit hero name"
+                      >
+                        ✏️
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div>
-              <h1 className="text-sm md:text-base font-press text-white text-retro-shadow-blue uppercase tracking-tight flex items-center gap-1.5 leading-none">
-                <span>PeerLearn Arcade</span>
-                <span className="text-amber-400 font-pixel text-xl bg-blue-950 px-1 border border-blue-500">
-                  v2.0
+
+            {/* Core HUD Status Metrics Bar — only visible on main dashboard */}
+            {activeTab === "guild_hall" && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 w-full lg:w-auto select-none">
+              
+              {/* Health Heart Block */}
+              <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
+                <span className="text-[9px] font-press text-rose-500 uppercase flex items-center gap-0.5 font-bold">
+                  <Heart className="w-3 h-3 shrink-0 animate-bounce text-rose-500" />
+                  <span>HEALTH HP</span>
                 </span>
-              </h1>
-              <div className="flex items-center gap-2 mt-1.5">
-                <span className="text-xs text-[#3b82f6] font-press font-bold uppercase shrink-0">
-                  HERO IGN:
+                <span className="text-xl font-pixel text-white font-bold">
+                  {gameState.playerHealth} / {gameState.maxHealth}
                 </span>
-                {isEditingNickname ? (
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={tempNickname}
-                      onChange={(e) => setTempNickname(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") saveHeroNickname();
-                        if (e.key === "Escape") setIsEditingNickname(false);
-                      }}
-                      className="bg-black text-[#3b82f6] font-pixel text-lg px-2 py-0.5 border-2 border-[#3b82f6] focus:outline-none w-36 uppercase"
-                      maxLength={16}
-                      autoFocus
-                    />
-                    <button
-                      onClick={saveHeroNickname}
-                      className="bg-[#3b82f6] text-black font-press text-[9px] px-2 py-1 border-2 border-white hover:bg-[#2563eb] cursor-pointer uppercase"
-                    >
-                      OK
-                    </button>
-                    <button
-                      onClick={() => setIsEditingNickname(false)}
-                      className="text-zinc-500 font-press text-[9px] px-2 py-1 border-2 border-zinc-700 hover:border-zinc-500 cursor-pointer uppercase"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-lg font-pixel text-white bg-[#172554] px-2 py-0.5 border border-[#3b82f6]/30 uppercase font-bold tracking-wider">
-                      {nickname}
-                    </span>
-                    <button
-                      onClick={() => { setTempNickname(nickname); setIsEditingNickname(true); playGameSound("click"); }}
-                      className="text-[9px] font-press text-[#3b82f6] hover:text-white border border-[#3b82f6]/40 hover:border-[#3b82f6] px-1.5 py-0.5 cursor-pointer uppercase"
-                      title="Edit hero name"
-                    >
-                      ✏️
-                    </button>
-                  </div>
-                )}
+                <div className="w-full bg-zinc-900 h-1.5 mt-1 border border-zinc-800 overflow-hidden">
+                  <div 
+                    className="bg-rose-500 h-full transition-all duration-300"
+                    style={{ width: `${(gameState.playerHealth / gameState.maxHealth) * 100}%` }}
+                  />
+                </div>
               </div>
-            </div>
-          </div>
 
-          {/* HUD Status Metrics */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 w-full lg:w-auto select-none">
-
-            {/* Health */}
-            <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
-              <span className="text-[9px] font-press text-rose-500 uppercase flex items-center gap-0.5 font-bold">
-                <Heart className="w-3 h-3 shrink-0 animate-bounce text-rose-500" />
-                <span>HEALTH HP</span>
-              </span>
-              <span className="text-xl font-pixel text-white font-bold">
-                {gameState.playerHealth} / {gameState.maxHealth}
-              </span>
-              <div className="w-full bg-zinc-900 h-1.5 mt-1 border border-zinc-800 overflow-hidden">
-                <div
-                  className="bg-rose-500 h-full transition-all duration-300"
-                  style={{
-                    width: `${(gameState.playerHealth / gameState.maxHealth) * 100}%`,
-                  }}
-                />
+              {/* Level & XP progression bar */}
+              <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
+                <span className="text-[9px] font-press text-emerald-400 uppercase flex items-center gap-0.5 font-bold">
+                  <Shield className="w-3 h-3 shrink-0" />
+                  <span>LEVEL {gameState.level}</span>
+                </span>
+                <span className="text-xl font-pixel text-white font-bold">
+                  {gameState.currentXP} / {gameState.level * 100} XP
+                </span>
+                <div className="w-full bg-zinc-900 h-1.5 mt-1 border border-zinc-800 overflow-hidden">
+                  <div 
+                    className="bg-emerald-500 h-full transition-all duration-300"
+                    style={{ width: `${(gameState.currentXP / (gameState.level * 100)) * 100}%` }}
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Level & XP */}
-            <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
-              <span className="text-[9px] font-press text-emerald-400 uppercase flex items-center gap-0.5 font-bold">
-                <Shield className="w-3 h-3 shrink-0" />
-                <span>LEVEL {gameState.level}</span>
-              </span>
-              <span className="text-xl font-pixel text-white font-bold">
-                {gameState.currentXP} / {gameState.level * 200} XP
-              </span>
-              <div className="w-full bg-zinc-900 h-1.5 mt-1 border border-zinc-800 overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full transition-all duration-300"
-                  style={{
-                    width: `${Math.min(100, (gameState.currentXP / (gameState.level * 200)) * 100)}%`,
-                  }}
-                />
+              {/* Gold Counts */}
+              <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
+                <span className="text-[9px] font-press text-yellow-400 uppercase flex items-center gap-0.5 font-bold">
+                  <Coins className="w-3 h-3 shrink-0" />
+                  <span>GOLD COINS</span>
+                </span>
+                <span className="text-xl font-pixel text-amber-300 font-bold">
+                  💰 {gameState.goldCount}G
+                </span>
+                <span className="text-[9px] font-pixel text-zinc-500 mt-1 uppercase">
+                  [Ready to Trade]
+                </span>
               </div>
+
+              {/* Crystals & Jewels */}
+              <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
+                <span className="text-[9px] font-press text-cyan-400 uppercase flex items-center gap-0.5 font-bold">
+                  <Gem className="w-3 h-3 shrink-0" />
+                  <span>CRYSTALS</span>
+                </span>
+                <span className="text-xl font-pixel text-cyan-300 font-bold">
+                  💎 {gameState.jewelCount} / {gameState.starCount}★
+                </span>
+                <span className="text-[9px] font-pixel text-zinc-500 mt-1 uppercase">
+                  [Relic Vaults]
+                </span>
+              </div>
+
             </div>
+            )}
 
-            {/* Gold */}
-            <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
-              <span className="text-[9px] font-press text-yellow-400 uppercase flex items-center gap-0.5 font-bold">
-                <Coins className="w-3 h-3 shrink-0" />
-                <span>GOLD COINS</span>
-              </span>
-              <span className="text-xl font-pixel text-amber-300 font-bold">
-                💰 {gameState.goldCount}G
-              </span>
-              <span className="text-[9px] font-pixel text-zinc-500 mt-1 uppercase">
-                [Ready to Trade]
-              </span>
-            </div>
-
-            {/* Crystals */}
-            <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
-              <span className="text-[9px] font-press text-cyan-400 uppercase flex items-center gap-0.5 font-bold">
-                <Gem className="w-3 h-3 shrink-0" />
-                <span>CRYSTALS</span>
-              </span>
-              <span className="text-xl font-pixel text-cyan-300 font-bold">
-                💎 {gameState.jewelCount} / {gameState.starCount}★
-              </span>
-              <span className="text-[9px] font-pixel text-zinc-500 mt-1 uppercase">
-                [Relic Vaults]
-              </span>
-            </div>
-          </div>
-
-          {/* Sound & Logout Controls */}
-          <div className="flex gap-2 w-full lg:w-auto justify-end">
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => setIsMuted(!isMuted)}
-              className="p-2 bg-zinc-900 border-2 border-zinc-700 text-white hover:border-[#3b82f6] cursor-pointer"
-              title={isMuted ? "Unmute" : "Mute Sound"}
-            >
-              {isMuted ? (
-                <VolumeX className="w-4 h-4" />
-              ) : (
-                <Volume2 className="w-4 h-4" />
-              )}
-            </motion.button>
-
-            {authUser && (
+            {/* Sound & Mode controllers */}
+            <div className="flex gap-2 w-full lg:w-auto justify-end">
               <motion.button
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
-                onClick={handleLogout}
-                className="p-2 bg-zinc-900 border-2 border-zinc-700 text-rose-400 hover:border-rose-500 cursor-pointer"
-                title="Logout"
+                onClick={() => setIsMuted(!isMuted)}
+                className="p-2 bg-zinc-900 border-2 border-zinc-700 text-white hover:border-[#3b82f6] cursor-pointer"
+                title={isMuted ? "Unmute Retro Synthesizer" : "Mute Sound"}
               >
-                <LogOut className="w-4 h-4" />
+                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
               </motion.button>
-            )}
-          </div>
-        </header>
+            </div>
 
-        {/* ═══════════════════════════════════════════════════════════════
-            TOAST OVERLAY
-        ═══════════════════════════════════════════════════════════════ */}
+          </header>
+        )}
+
+        {/* ======================================================== */}
+        {/* RETRO TOAST ALERTS OVERLAY */}
+        {/* ======================================================== */}
         <AnimatePresence>
           {toast && (
             <motion.div
@@ -1655,40 +1561,24 @@ let globalAudioCtx: any = null;
               exit={{ opacity: 0, y: -20 }}
               className="fixed top-6 right-6 z-50 max-w-sm font-press text-[11px] p-4 border-4 bg-black select-text shadow-xl"
               style={{
-                borderColor:
-                  toast.type === "success"
-                    ? "#10b981"
-                    : toast.type === "error"
-                    ? "#ef4444"
-                    : "#3b82f6",
-                color:
-                  toast.type === "success"
-                    ? "#10b981"
-                    : toast.type === "error"
-                    ? "#ef4444"
-                    : "#3b82f6",
+                borderColor: toast.type === "success" ? "#10b981" : toast.type === "error" ? "#ef4444" : "#3b82f6",
+                color: toast.type === "success" ? "#10b981" : toast.type === "error" ? "#ef4444" : "#3b82f6"
               }}
             >
               <div className="flex gap-2">
-                <span>
-                  {toast.type === "success"
-                    ? "📢"
-                    : toast.type === "error"
-                    ? "❌"
-                    : "🔔"}
-                </span>
+                <span>{toast.type === "success" ? "📢" : toast.type === "error" ? "❌" : "🔔"}</span>
                 <p className="leading-normal">{toast.message}</p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ═══════════════════════════════════════════════════════════════
-            ARCADE BODY LAYOUT
-        ═══════════════════════════════════════════════════════════════ */}
+        {/* ======================================================== */}
+        {/* RETRO ARCADE BODY CABINET LAYOUT */}
+        {/* ======================================================== */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 relative z-10">
-
-          {/* SIDEBAR NAVIGATION */}
+          
+          {/* RETRO SIDEBAR NAVIGATION PANEL */}
           <nav className="col-span-1 md:col-span-3 space-y-3.5 select-none text-left">
             <div className="bg-black border-2 border-zinc-800 p-2 px-3">
               <span className="text-[10px] text-zinc-500 font-press uppercase block tracking-wider font-bold">
@@ -1709,6 +1599,7 @@ let globalAudioCtx: any = null;
               ].map((tab) => {
                 const isActive = activeTab === tab.id;
                 const TabIcon = tab.icon;
+                
                 return (
                   <motion.button
                     key={tab.id}
@@ -1719,73 +1610,60 @@ let globalAudioCtx: any = null;
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.96, y: 3 }}
                     className={`p-3 border-2 flex items-center gap-3.5 transition-all text-left uppercase font-press text-[11px] cursor-pointer font-bold relative ${
-                      isActive
-                        ? "bg-black border-[var(--active-color)] text-white"
+                      isActive 
+                        ? `bg-black border-[${tab.color}] shadow-[0_4px_0_#000] text-white ring-2 ring-[${tab.color}]/40`
                         : "bg-zinc-950 border-zinc-800 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
                     }`}
-                    style={
-                      isActive
-                        ? ({ "--active-color": tab.color } as React.CSSProperties)
-                        : {}
-                    }
-                    {...(isActive ? { style: { borderColor: tab.color } } : {})}
+                    style={{
+                      borderColor: isActive ? tab.color : undefined,
+                    }}
                   >
-                    <TabIcon
-                      className="w-4 h-4 shrink-0"
-                      style={{ color: isActive ? tab.color : undefined }}
-                    />
+                    <TabIcon className="w-4 h-4 shrink-0" style={{ color: isActive ? tab.color : undefined }} />
                     <span className="truncate">{tab.label}</span>
                     {isActive && (
-                      <span
-                        className="absolute right-3.5 text-xs animate-ping"
-                        style={{ color: tab.color }}
-                      >
-                        ●
-                      </span>
+                      <span className="absolute right-3.5 text-xs animate-ping" style={{ color: tab.color }}>●</span>
                     )}
                   </motion.button>
                 );
               })}
             </div>
 
-            {/* AVATAR SKIN LOCKER */}
+            {/* MINI RETRO AVATAR SHOP */}
             <div className="bg-black border-2 border-zinc-800 p-4 space-y-3.5">
               <span className="text-[9px] font-press text-amber-400 uppercase tracking-widest block font-bold">
                 🛡️ AVATAR SKIN LOCKER
               </span>
+
               <div className="space-y-2">
                 {AVATAR_SKINS.map((skin) => {
                   const isUnlocked = gameState.unlockedSkins.includes(skin.id);
                   const isActive = gameState.activeSkin === skin.id;
+
                   const handleSkinAction = () => {
                     if (isActive) return;
                     if (isUnlocked) {
-                      setGameState((prev) => ({ ...prev, activeSkin: skin.id }));
+                      setGameState(prev => ({ ...prev, activeSkin: skin.id }));
                       showToastMsg(`EQUIPPED SKIN: Equipped "${skin.name}"!`, "success");
                       playGameSound("click");
                     } else {
+                      // Purchase
                       if (gameState.goldCount < skin.cost) {
-                        showToastMsg(
-                          `GOLD COIN SHORTAGE: Purchase needs ${skin.cost} Gold!`,
-                          "error"
-                        );
+                        showToastMsg(`GOLD COIN SHORTAGE: Purchase needs ${skin.cost} Gold!`, "error");
                         return;
                       }
-                      setGameState((prev) => ({
+                      setGameState(prev => ({
                         ...prev,
                         goldCount: prev.goldCount - skin.cost,
                         unlockedSkins: [...prev.unlockedSkins, skin.id],
-                        activeSkin: skin.id,
+                        activeSkin: skin.id
                       }));
-                      showToastMsg(
-                        `ACQUIRED SKIN: Bought and equipped "${skin.name}"!`,
-                        "success"
-                      );
+                      showToastMsg(`ACQUIRED SKIN: Bought and equipped "${skin.name}"!`, "success");
                       playGameSound("coin");
                     }
                   };
+
                   return (
-                    <div
+                    <div 
                       key={skin.id}
                       className={`p-2 bg-zinc-950 border flex items-center justify-between text-left ${
                         isActive ? "border-amber-400" : "border-zinc-800/60"
@@ -1794,22 +1672,19 @@ let globalAudioCtx: any = null;
                       <div className="flex items-center gap-2 truncate">
                         <span className="text-xl shrink-0">{skin.spriteUrl}</span>
                         <div className="truncate">
-                          <span className="text-[10px] font-press text-white block truncate leading-tight">
-                            {skin.name}
-                          </span>
-                          <span className="text-[9px] font-pixel text-zinc-400 uppercase block truncate">
-                            {skin.powerName}
-                          </span>
+                          <span className="text-[10px] font-press text-white block truncate leading-tight">{skin.name}</span>
+                          <span className="text-[9px] font-pixel text-zinc-400 uppercase block truncate">{skin.powerName}</span>
                         </div>
                       </div>
+
                       <button
                         onClick={handleSkinAction}
                         className={`font-press text-[8px] p-1.5 px-2 border uppercase cursor-pointer shrink-0 font-bold ${
-                          isActive
+                          isActive 
                             ? "bg-amber-400 text-black border-white"
                             : isUnlocked
-                            ? "bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700"
-                            : "bg-emerald-600 text-white border-emerald-400 hover:bg-emerald-500"
+                              ? "bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700"
+                              : "bg-emerald-600 text-white border-emerald-400 hover:bg-emerald-500"
                         }`}
                       >
                         {isActive ? "ACTIVE" : isUnlocked ? "EQUIP" : `💰${skin.cost}`}
@@ -1820,25 +1695,9 @@ let globalAudioCtx: any = null;
               </div>
             </div>
 
-            {/* Auth info */}
-            {authUser && (
-              <div className="bg-black border-2 border-zinc-800 p-3 space-y-1">
-                <span className="text-[8px] font-press text-zinc-500 uppercase block">
-                  Signed in as
-                </span>
-                <span className="text-[10px] font-pixel text-zinc-300 block truncate">
-                  {authUser.email}
-                </span>
-                {authUser.streak !== undefined && authUser.streak > 0 && (
-                  <span className="text-[9px] font-press text-amber-400 block">
-                    🔥 {authUser.streak} day streak
-                  </span>
-                )}
-              </div>
-            )}
           </nav>
 
-          {/* MAIN MODULE WORKSPACE */}
+          {/* MAIN MODULE WORKSPACE CONTAINER */}
           <main className="col-span-1 md:col-span-9 border-4 border-zinc-800 bg-black/90 p-4 sm:p-5 min-h-[500px]">
             <AnimatePresence mode="wait">
               <motion.div
@@ -1853,6 +1712,7 @@ let globalAudioCtx: any = null;
                   <GuildHall
                     gameState={gameState}
                     nickname={nickname}
+                    setNickname={setNickname}
                     activeSkinObj={activeSkinObj}
                     handleTavernRest={handleTavernRest}
                     sendStudyInvitation={sendStudyInvitation}
@@ -1865,7 +1725,8 @@ let globalAudioCtx: any = null;
                     }}
                   />
                 )}
-{activeTab === "hero_profile" && (
+
+                {activeTab === "hero_profile" && (
                   <ProfileDashboard
                     gameState={gameState}
                     setGameState={setGameState}
@@ -1894,7 +1755,7 @@ let globalAudioCtx: any = null;
                 {activeTab === "peer_chat" && (
                   <PeerChatDashboard
                     nickname={nickname}
-                    INITIAL_PEERS={realPeers}
+                    INITIAL_PEERS={INITIAL_PEERS}
                     activePeerId={activePeerId}
                     setActivePeerId={setActivePeerId}
                     peerChatHistories={peerChatHistories}
@@ -1928,6 +1789,7 @@ let globalAudioCtx: any = null;
                     playSound={playGameSound}
                   />
                 )}
+
                 {activeTab === "knowledge_scrolls" && (
                   <KnowledgeScrolls
                     scrollsSubject={scrollsSubject}
@@ -1947,6 +1809,7 @@ let globalAudioCtx: any = null;
                     playSound={playGameSound}
                   />
                 )}
+
                 {activeTab === "quests" && (
                   <QuestBook
                     quests={quests}
@@ -1956,6 +1819,7 @@ let globalAudioCtx: any = null;
                     playSound={playGameSound}
                   />
                 )}
+
                 {activeTab === "scribe_chamber" && (
                   <ScribeChamber
                     notes={notes}
@@ -1970,6 +1834,7 @@ let globalAudioCtx: any = null;
                     playSound={playGameSound}
                   />
                 )}
+
                 {activeTab === "neuro_mascot" && (
                   <PixelSageMascot
                     nickname={nickname}
@@ -1982,21 +1847,23 @@ let globalAudioCtx: any = null;
                     playSound={playGameSound}
                   />
                 )}
+
               </motion.div>
             </AnimatePresence>
           </main>
+
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════
-            FOOTER
-        ═══════════════════════════════════════════════════════════════ */}
+        {/* ======================================================== */}
+        {/* RETRO CABINET FOOTER BAR */}
+        {/* ======================================================== */}
         <footer className="border-4 border-zinc-800 bg-black p-4 text-center select-none text-xs space-y-1.5 relative z-10">
           <div className="flex flex-col md:flex-row justify-between items-center gap-2 font-press text-[9px] text-[#3b82f6] font-bold">
             <span className="uppercase">
               🕹️ SYSTEM ARCHITECTURE STATUS: CORE POWER ENVELOPE STABLE
             </span>
             <span className="uppercase">
-              [SUPABASE: CONNECTED] • [GEMINI: ACTIVE] • [SECURE]
+              [CHANNEL PORT: 3000] • [SECURE SHARED CONNECTION]
             </span>
           </div>
           <p className="text-[10px] font-pixel text-zinc-500 max-w-3xl mx-auto leading-normal">
@@ -2006,6 +1873,7 @@ let globalAudioCtx: any = null;
             complete challenges with your study network.
           </p>
         </footer>
+
       </div>
     </div>
   );
