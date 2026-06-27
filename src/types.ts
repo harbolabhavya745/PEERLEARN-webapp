@@ -81,6 +81,9 @@ export interface SkillProfile {
   xpEarned?: number;
   isSuggestion?: boolean;
   targetUserId?: string;
+  matchReason?: string;   // e.g. "Same college • 2 shared skills"
+  college?: string;
+  course?: string;
 }
 
 export interface AvatarSkin {

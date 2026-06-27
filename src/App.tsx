@@ -210,12 +210,15 @@ export default function App() {
             level: u.level || 1,
             avatarSkin: u.avatar_skin || "🧑‍💻",
             skillsToGive: u.skills || [],
-            skillsToLearn: [],
+            skillsToLearn: u.desired_skills || [],
             status: u.course ? `Studying ${u.course}` : "Available",
             isOnline: true,
             xpEarned: u.xp || 0,
             isSuggestion: true,
-            targetUserId: u.id
+            targetUserId: u.id,
+            matchReason: u.match_reason || "Recommended",
+            college: u.college || "",
+            course: u.course || ""
           }));
           mappedPeers = [...mappedPeers, ...suggPeers];
         }
