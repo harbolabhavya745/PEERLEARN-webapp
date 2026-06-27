@@ -44,9 +44,6 @@ export default function QuestBook({
     <div className="space-y-6">
       {/* Title block */}
       <div className="border-b-4 border-dashed border-[#8b5cf6]/20 pb-4">
-        <span className="text-xs text-[#8b5cf6] font-press tracking-wider uppercase block">
-          MODULE 04: OBJECTIVE JOURNAL
-        </span>
         <h2 className="text-2xl md:text-3xl font-press text-[#8b5cf6] text-retro-shadow-purple uppercase mt-2">
           Guild Quest Book
         </h2>
