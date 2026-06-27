@@ -30,6 +30,7 @@ import {
   Compass,
   LogOut,
   Loader2,
+  MessageSquare,
 } from "lucide-react";
 import {
   Difficulty,
@@ -41,6 +42,8 @@ import {
   SkillProfile,
   AvatarSkin,
   AuthUser,
+  AppTheme,
+  APP_THEMES
 } from "./types";
 
 import AuthScreen from "./components/AuthScreen";
@@ -50,6 +53,8 @@ import KnowledgeScrolls from "./components/KnowledgeScrolls";
 import QuestBook from "./components/QuestBook";
 import ScribeChamber from "./components/ScribeChamber";
 import PixelSageMascot from "./components/PixelSageMascot";
+import PeerChatDashboard from "./components/PeerChatDashboard";
+import ProfileDashboard from "./components/ProfileDashboard";
 import { getMe, getToken, logout, refreshToken, isTokenExpired } from "./auth";
 import type { AuthUser as AU } from "./types";
 
@@ -158,6 +163,119 @@ export default function App() {
 
   // ── Active tab ───────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<string>("guild_hall");
+  const [college, setCollege] = useState<string>("University of XYZ");
+  const [email, setEmail] = useState<string>("hero@peerlearn.edu");
+  const [knownSkills, setKnownSkills] = useState<string[]>(["React", "Node.js"]);
+  const [desiredSkills, setDesiredSkills] = useState<string[]>(["Machine Learning", "System Design"]);
+  const [avatarEmoji, setAvatarEmoji] = useState<string>("🧙‍♂️");
+  const [profileFrame, setProfileFrame] = useState<string>("emerald");
+  const [activeThemeId, setActiveThemeId] = useState<string>("green");
+  const [activePeerId, setActivePeerId] = useState<string | null>(null);
+  const [realPeers, setRealPeers] = useState<SkillProfile[]>(INITIAL_PEERS);
+  const [peerChatHistories, setPeerChatHistories] = useState<Record<string, { role: "user" | "model"; text: string }[]>>({});
+  const [peerChatLoading, setPeerChatLoading] = useState<Record<string, boolean>>({});
+
+  // ── Fetch Conversations ──
+  useEffect(() => {
+    if (!authUser) return;
+    async function loadConv() {
+      try {
+        const res = await authFetch("/api/chat/conversations");
+        if (res.ok) {
+          const data = await res.json();
+          const mappedPeers: SkillProfile[] = data.conversations.map((c: any) => ({
+            id: c.id, 
+            name: c.display_name || "Unknown",
+            level: c.other_user?.level || 1, 
+            avatarSkin: c.display_avatar || "🧑‍💻",
+            skillsToGive: c.other_user?.skills || [],
+            skillsToLearn: [],
+            status: c.other_user?.bio || "Online", 
+            isOnline: true,
+            xpEarned: c.other_user?.xp || 0
+          }));
+          if (mappedPeers.length > 0) {
+            setRealPeers(mappedPeers);
+            // Default to the first actual conversation if none is selected
+            if (!activePeerId) setActivePeerId(mappedPeers[0].id);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load conversations", e);
+      }
+    }
+    loadConv();
+  }, [authUser]);
+
+  // ── Fetch Messages for Active Chat ──
+  useEffect(() => {
+    if (!authUser || !activePeerId) return;
+    
+    // Ignore dummy mock profiles (p1, p2, p3)
+    if (activePeerId.startsWith("p")) return;
+
+    async function loadMsgs() {
+      setPeerChatLoading(prev => ({ ...prev, [activePeerId as string]: true }));
+      try {
+        const res = await authFetch(`/api/chat/messages?conversation_id=${activePeerId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const mappedMsgs = data.messages.map((m: any) => ({
+            role: m.sender?.id === authUser.id ? "user" : "model",
+            text: m.content
+          }));
+          setPeerChatHistories(prev => ({ ...prev, [activePeerId as string]: mappedMsgs }));
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setPeerChatLoading(prev => ({ ...prev, [activePeerId as string]: false }));
+      }
+    }
+    loadMsgs();
+  }, [authUser, activePeerId]);
+
+  const sendPeerMessage = async (peerId: string, text: string) => {
+    const newMsg = { role: "user" as const, text };
+    setPeerChatHistories(prev => ({
+      ...prev,
+      [peerId]: [...(prev[peerId] || []), newMsg]
+    }));
+    setPeerChatLoading(prev => ({ ...prev, [peerId]: true }));
+    
+    if (authUser && !peerId.startsWith("p")) {
+      try {
+        await authFetch("/api/chat/messages", {
+          method: "POST",
+          body: JSON.stringify({
+            conversation_id: peerId,
+            content: text
+          })
+        });
+        setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
+        if (typeof window !== 'undefined' && (window as any).playGameSound) {
+          (window as any).playGameSound("chat_send");
+        }
+      } catch (e) {
+        console.error(e);
+        setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
+      }
+    } else {
+      // Simulate AI peer typing for dummy profiles
+      setTimeout(() => {
+        const reply = { role: "model" as const, text: "Got it! Let's study." };
+        setPeerChatHistories(prev => ({
+          ...prev,
+          [peerId]: [...(prev[peerId] || []), reply]
+        }));
+        setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
+        if (typeof window !== 'undefined' && (window as any).playGameSound) {
+          (window as any).playGameSound("chat_reply");
+        }
+      }, 1000);
+    }
+  };
+
 
   // ── Toast ────────────────────────────────────────────────────────────────
   const [toast, setToast] = useState<{
@@ -305,10 +423,44 @@ export default function App() {
     if (!profile) return;
     setGameState((prev) => ({
       ...prev,
-      currentXP: profile.xp % 200 || profile.xp || prev.currentXP,
+      currentXP: profile.xp !== undefined ? (profile.xp % 200) : prev.currentXP,
       level: profile.level || prev.level,
+      goldCount: profile.gold_count ?? prev.goldCount,
+      jewelCount: profile.jewel_count ?? prev.jewelCount,
+      starCount: profile.star_count ?? prev.starCount,
+      swordPower: profile.sword_power ?? prev.swordPower,
+      playerHealth: profile.player_health ?? prev.playerHealth,
+      maxHealth: profile.max_health ?? prev.maxHealth,
+      unlockedSkins: profile.unlocked_skins ?? prev.unlockedSkins,
+      activeSkin: profile.active_skin ?? prev.activeSkin,
     }));
   }
+
+  // Sync game state to backend whenever it changes
+  useEffect(() => {
+    if (!authUser) return;
+    const timeoutId = setTimeout(() => {
+      // Reconstruct total XP from level and currentXP, using backend formula: level = floor(xp/200) + 1
+      const totalXp = ((gameState.level - 1) * 200) + gameState.currentXP;
+      authFetch("/api/auth/me", {
+        method: "PATCH",
+        body: JSON.stringify({
+          xp: totalXp,
+          level: gameState.level,
+          gold_count: gameState.goldCount,
+          jewel_count: gameState.jewelCount,
+          star_count: gameState.starCount,
+          sword_power: gameState.swordPower,
+          player_health: gameState.playerHealth,
+          max_health: gameState.maxHealth,
+          unlocked_skins: gameState.unlockedSkins,
+          active_skin: gameState.activeSkin,
+        }),
+      }).catch(console.error);
+    }, 1500); // Debounce sync
+
+    return () => clearTimeout(timeoutId);
+  }, [gameState, authUser]);
 
   function handleLoginSuccess(user: AuthUser, token: string) {
     setAuthUser(user);
@@ -511,7 +663,7 @@ export default function App() {
 
         const finalXP = Math.round(xp * xpMultiplier);
         const totalXP = prev.currentXP + finalXP;
-        const xpNeeded = prev.level * 200; // matches backend formula: level = floor(xp/200)+1
+        const xpNeeded = 200; // Each level requires exactly 200 XP
         let finalLvl = prev.level;
         let leftoverXP = totalXP;
 
@@ -1343,6 +1495,8 @@ export default function App() {
             <div className="flex flex-col gap-2.5">
               {[
                 { id: "guild_hall", label: "Guild Hall", icon: Users, color: "#10b981" },
+                { id: "hero_profile", label: "Hero Profile", icon: User, color: "#f59e0b" },
+                { id: "peer_chat", label: "Peer Chat", icon: MessageSquare, color: "#10b981" },
                 { id: "quiz_arena", label: "Quiz Arena", icon: Gamepad2, color: "#3b82f6" },
                 { id: "knowledge_scrolls", label: "Knowledge Scrolls", icon: BookOpen, color: "#ec4899" },
                 { id: "quests", label: "Quest Book", icon: ListTodo, color: "#8b5cf6" },
@@ -1500,8 +1654,52 @@ export default function App() {
                     sendStudyInvitation={sendStudyInvitation}
                     INITIAL_PEERS={INITIAL_PEERS}
                     playSound={playGameSound}
+                    onOpenChat={(peerId) => {
+                      setActivePeerId(peerId);
+                      setActiveTab("peer_chat");
+                      playGameSound("click");
+                    }}
                   />
                 )}
+{activeTab === "hero_profile" && (
+                  <ProfileDashboard
+                    gameState={gameState}
+                    setGameState={setGameState}
+                    AVATAR_SKINS={AVATAR_SKINS}
+                    nickname={nickname}
+                    setNickname={setNickname}
+                    college={college}
+                    setCollege={setCollege}
+                    email={email}
+                    setEmail={setEmail}
+                    knownSkills={knownSkills}
+                    setKnownSkills={setKnownSkills}
+                    desiredSkills={desiredSkills}
+                    setDesiredSkills={setDesiredSkills}
+                    avatarEmoji={avatarEmoji}
+                    setAvatarEmoji={setAvatarEmoji}
+                    profileFrame={profileFrame}
+                    setProfileFrame={setProfileFrame}
+                    activeThemeId={activeThemeId}
+                    setActiveThemeId={setActiveThemeId}
+                    playSound={playGameSound}
+                    showToast={showToastMsg}
+                  />
+                )}
+
+                {activeTab === "peer_chat" && (
+                  <PeerChatDashboard
+                    nickname={nickname}
+                    INITIAL_PEERS={realPeers}
+                    activePeerId={activePeerId}
+                    setActivePeerId={setActivePeerId}
+                    peerChatHistories={peerChatHistories}
+                    sendPeerMessage={sendPeerMessage}
+                    peerChatLoading={peerChatLoading}
+                    playSound={playGameSound}
+                  />
+                )}
+
                 {activeTab === "quiz_arena" && (
                   <QuizArena
                     quizSubject={quizSubject}

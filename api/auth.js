@@ -149,7 +149,10 @@ export default async function handler(req, res) {
     const ok = await requireAuth(req, res);
     if (!ok) return;
 
-    const { full_name, bio, graduation_year, skills, avatar_skin, avatar_frame, avatar_url } = req.body;
+    const { 
+      full_name, bio, graduation_year, skills, avatar_skin, avatar_frame, avatar_url,
+      gold_count, jewel_count, star_count, sword_power, player_health, max_health, unlocked_skins, active_skin, xp, level
+    } = req.body;
     
     const updates = {};
     if (full_name !== undefined) updates.full_name = full_name;
@@ -159,6 +162,16 @@ export default async function handler(req, res) {
     if (avatar_skin !== undefined) updates.avatar_skin = avatar_skin;
     if (avatar_frame !== undefined) updates.avatar_frame = avatar_frame;
     if (avatar_url !== undefined) updates.avatar_url = avatar_url;
+    if (gold_count !== undefined) updates.gold_count = gold_count;
+    if (jewel_count !== undefined) updates.jewel_count = jewel_count;
+    if (star_count !== undefined) updates.star_count = star_count;
+    if (sword_power !== undefined) updates.sword_power = sword_power;
+    if (player_health !== undefined) updates.player_health = player_health;
+    if (max_health !== undefined) updates.max_health = max_health;
+    if (unlocked_skins !== undefined) updates.unlocked_skins = unlocked_skins;
+    if (active_skin !== undefined) updates.active_skin = active_skin;
+    if (xp !== undefined) updates.xp = xp;
+    if (level !== undefined) updates.level = level;
 
     const { data, error } = await supabaseAdmin
       .from('profiles')

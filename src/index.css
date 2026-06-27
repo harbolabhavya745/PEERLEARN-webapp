@@ -176,3 +176,14 @@
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
+
+.pixel-box-amber {
+  border: 4px solid #f59e0b;
+  box-shadow: 0 4px 0 #b45309;
+  background-color: #451a03;
+}
+
+
+.text-retro-shadow-amber {
+  text-shadow: 2px 2px 0px #b45309;
+}
