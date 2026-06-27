@@ -110,15 +110,82 @@ const AVATAR_SKINS: AvatarSkin[] = [
 
 // ─── Seed Active Peers ─────────────────────────────────────────────────────
 
-const INITIAL_PEERS: SkillProfile[] = [];
+const INITIAL_PEERS: SkillProfile[] = [
+  {
+    id: "p1",
+    name: "Alex Coder",
+    level: 12,
+    avatarSkin: "🥷",
+    skillsToGive: ["React", "JavaScript"],
+    skillsToLearn: ["Python", "DSA"],
+    status: "Grinding LeetCode...",
+    isOnline: true,
+    xpEarned: 2450
+  },
+  {
+    id: "p2",
+    name: "Sarah Science",
+    level: 9,
+    avatarSkin: "🧪",
+    skillsToGive: ["Chemistry", "Biology"],
+    skillsToLearn: ["Calculus", "Physics"],
+    status: "In the lab!",
+    isOnline: true,
+    xpEarned: 1800
+  },
+  {
+    id: "p3",
+    name: "Mike Math",
+    level: 15,
+    avatarSkin: "🧙‍♂️",
+    skillsToGive: ["Calculus", "Algebra"],
+    skillsToLearn: ["Machine Learning"],
+    status: "Solving limits.",
+    isOnline: false,
+    xpEarned: 3100
+  }
+];
 
 // ─── Seed Quests ───────────────────────────────────────────────────────────
 
-const SEED_QUESTS: Quest[] = [];
+const SEED_QUESTS: Quest[] = [
+  {
+    id: "q1",
+    type: "daily",
+    title: "Scribe First Scroll",
+    description: "Write your first note in the Scribe Chamber.",
+    xpReward: 30,
+    goldReward: 10,
+    difficulty: Difficulty.EASY,
+    completed: false,
+    dueDate: "Today"
+  },
+  {
+    id: "q2",
+    type: "weekly",
+    title: "Defeat 3 Quizzes",
+    description: "Complete 3 quizzes in the Quiz Arena.",
+    xpReward: 120,
+    goldReward: 50,
+    difficulty: Difficulty.MEDIUM,
+    completed: false,
+    dueDate: "In 7 Days"
+  }
+];
 
 // ─── Seed Notes ────────────────────────────────────────────────────────────
 
-const SEED_NOTES: NoteBlock[] = [];
+const SEED_NOTES: NoteBlock[] = [
+  {
+    id: "n1",
+    title: "Welcome to PeerLearn!",
+    content: "Start writing your notes here to earn XP and Gold.",
+    author: "System",
+    color: "green",
+    date: new Date().toLocaleString(),
+    tags: ["Welcome"]
+  }
+];
 
 // ─── Default Game State ────────────────────────────────────────────────────
 
@@ -171,8 +238,69 @@ export default function App() {
   const [profileFrame, setProfileFrame] = useState<string>("emerald");
   const [activeThemeId, setActiveThemeId] = useState<string>("green");
   const [activePeerId, setActivePeerId] = useState<string | null>(null);
+  const [realPeers, setRealPeers] = useState<SkillProfile[]>(INITIAL_PEERS);
   const [peerChatHistories, setPeerChatHistories] = useState<Record<string, { role: "user" | "model"; text: string }[]>>({});
   const [peerChatLoading, setPeerChatLoading] = useState<Record<string, boolean>>({});
+
+  // ── Fetch Conversations ──
+  useEffect(() => {
+    if (!authUser) return;
+    async function loadConv() {
+      try {
+        const res = await authFetch("/api/chat/conversations");
+        if (res.ok) {
+          const data = await res.json();
+          const mappedPeers: SkillProfile[] = data.conversations.map((c: any) => ({
+            id: c.id, 
+            name: c.display_name || "Unknown",
+            level: c.other_user?.level || 1, 
+            avatarSkin: c.display_avatar || "🧑‍💻",
+            skillsToGive: c.other_user?.skills || [],
+            skillsToLearn: [],
+            status: c.other_user?.bio || "Online", 
+            isOnline: true,
+            xpEarned: c.other_user?.xp || 0
+          }));
+          if (mappedPeers.length > 0) {
+            setRealPeers(mappedPeers);
+            // Default to the first actual conversation if none is selected
+            if (!activePeerId) setActivePeerId(mappedPeers[0].id);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load conversations", e);
+      }
+    }
+    loadConv();
+  }, [authUser]);
+
+  // ── Fetch Messages for Active Chat ──
+  useEffect(() => {
+    if (!authUser || !activePeerId) return;
+    
+    // Ignore dummy mock profiles (p1, p2, p3)
+    if (activePeerId.startsWith("p")) return;
+
+    async function loadMsgs() {
+      setPeerChatLoading(prev => ({ ...prev, [activePeerId as string]: true }));
+      try {
+        const res = await authFetch(`/api/chat/messages?conversation_id=${activePeerId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const mappedMsgs = data.messages.map((m: any) => ({
+            role: m.sender?.id === authUser.id ? "user" : "model",
+            text: m.content
+          }));
+          setPeerChatHistories(prev => ({ ...prev, [activePeerId as string]: mappedMsgs }));
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setPeerChatLoading(prev => ({ ...prev, [activePeerId as string]: false }));
+      }
+    }
+    loadMsgs();
+  }, [authUser, activePeerId]);
 
   const sendPeerMessage = async (peerId: string, text: string) => {
     const newMsg = { role: "user" as const, text };
@@ -182,18 +310,37 @@ export default function App() {
     }));
     setPeerChatLoading(prev => ({ ...prev, [peerId]: true }));
     
-    // Simulate AI peer typing
-    setTimeout(() => {
-      const reply = { role: "model" as const, text: "Got it! Let's study." };
-      setPeerChatHistories(prev => ({
-        ...prev,
-        [peerId]: [...(prev[peerId] || []), reply]
-      }));
-      setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
-      if (typeof window !== 'undefined' && (window as any).playGameSound) {
-        (window as any).playGameSound("chat_reply");
+    if (authUser && !peerId.startsWith("p")) {
+      try {
+        await authFetch("/api/chat/messages", {
+          method: "POST",
+          body: JSON.stringify({
+            conversation_id: peerId,
+            content: text
+          })
+        });
+        setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
+        if (typeof window !== 'undefined' && (window as any).playGameSound) {
+          (window as any).playGameSound("chat_send");
+        }
+      } catch (e) {
+        console.error(e);
+        setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
       }
-    }, 1000);
+    } else {
+      // Simulate AI peer typing for dummy profiles
+      setTimeout(() => {
+        const reply = { role: "model" as const, text: "Got it! Let's study." };
+        setPeerChatHistories(prev => ({
+          ...prev,
+          [peerId]: [...(prev[peerId] || []), reply]
+        }));
+        setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
+        if (typeof window !== 'undefined' && (window as any).playGameSound) {
+          (window as any).playGameSound("chat_reply");
+        }
+      }, 1000);
+    }
   };
 
 
@@ -1552,7 +1699,7 @@ export default function App() {
                 {activeTab === "peer_chat" && (
                   <PeerChatDashboard
                     nickname={nickname}
-                    INITIAL_PEERS={INITIAL_PEERS}
+                    INITIAL_PEERS={realPeers}
                     activePeerId={activePeerId}
                     setActivePeerId={setActivePeerId}
                     peerChatHistories={peerChatHistories}
