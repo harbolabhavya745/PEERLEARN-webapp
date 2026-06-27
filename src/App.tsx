@@ -30,6 +30,7 @@ import {
   Compass,
   LogOut,
   Loader2,
+  MessageSquare,
 } from "lucide-react";
 import {
   Difficulty,
@@ -41,6 +42,8 @@ import {
   SkillProfile,
   AvatarSkin,
   AuthUser,
+  AppTheme,
+  APP_THEMES
 } from "./types";
 
 import AuthScreen from "./components/AuthScreen";
@@ -50,6 +53,8 @@ import KnowledgeScrolls from "./components/KnowledgeScrolls";
 import QuestBook from "./components/QuestBook";
 import ScribeChamber from "./components/ScribeChamber";
 import PixelSageMascot from "./components/PixelSageMascot";
+import PeerChatDashboard from "./components/PeerChatDashboard";
+import ProfileDashboard from "./components/ProfileDashboard";
 import { getMe, getToken, logout, refreshToken, isTokenExpired } from "./auth";
 import type { AuthUser as AU } from "./types";
 
@@ -158,6 +163,39 @@ export default function App() {
 
   // ── Active tab ───────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<string>("guild_hall");
+  const [college, setCollege] = useState<string>("University of XYZ");
+  const [email, setEmail] = useState<string>("hero@peerlearn.edu");
+  const [knownSkills, setKnownSkills] = useState<string[]>(["React", "Node.js"]);
+  const [desiredSkills, setDesiredSkills] = useState<string[]>(["Machine Learning", "System Design"]);
+  const [avatarEmoji, setAvatarEmoji] = useState<string>("🧙‍♂️");
+  const [profileFrame, setProfileFrame] = useState<string>("emerald");
+  const [activeThemeId, setActiveThemeId] = useState<string>("green");
+  const [activePeerId, setActivePeerId] = useState<string | null>(null);
+  const [peerChatHistories, setPeerChatHistories] = useState<Record<string, { role: "user" | "model"; text: string }[]>>({});
+  const [peerChatLoading, setPeerChatLoading] = useState<Record<string, boolean>>({});
+
+  const sendPeerMessage = async (peerId: string, text: string) => {
+    const newMsg = { role: "user" as const, text };
+    setPeerChatHistories(prev => ({
+      ...prev,
+      [peerId]: [...(prev[peerId] || []), newMsg]
+    }));
+    setPeerChatLoading(prev => ({ ...prev, [peerId]: true }));
+    
+    // Simulate AI peer typing
+    setTimeout(() => {
+      const reply = { role: "model" as const, text: "Got it! Let's study." };
+      setPeerChatHistories(prev => ({
+        ...prev,
+        [peerId]: [...(prev[peerId] || []), reply]
+      }));
+      setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
+      if (typeof window !== 'undefined' && (window as any).playGameSound) {
+        (window as any).playGameSound("chat_reply");
+      }
+    }, 1000);
+  };
+
 
   // ── Toast ────────────────────────────────────────────────────────────────
   const [toast, setToast] = useState<{
@@ -295,10 +333,44 @@ export default function App() {
     if (!profile) return;
     setGameState((prev) => ({
       ...prev,
-      currentXP: profile.xp % 200 || profile.xp || prev.currentXP,
+      currentXP: profile.xp !== undefined ? (profile.xp % 200) : prev.currentXP,
       level: profile.level || prev.level,
+      goldCount: profile.gold_count ?? prev.goldCount,
+      jewelCount: profile.jewel_count ?? prev.jewelCount,
+      starCount: profile.star_count ?? prev.starCount,
+      swordPower: profile.sword_power ?? prev.swordPower,
+      playerHealth: profile.player_health ?? prev.playerHealth,
+      maxHealth: profile.max_health ?? prev.maxHealth,
+      unlockedSkins: profile.unlocked_skins ?? prev.unlockedSkins,
+      activeSkin: profile.active_skin ?? prev.activeSkin,
     }));
   }
+
+  // Sync game state to backend whenever it changes
+  useEffect(() => {
+    if (!authUser) return;
+    const timeoutId = setTimeout(() => {
+      // Reconstruct total XP from level and currentXP, using backend formula: level = floor(xp/200) + 1
+      const totalXp = ((gameState.level - 1) * 200) + gameState.currentXP;
+      authFetch("/api/auth/me", {
+        method: "PATCH",
+        body: JSON.stringify({
+          xp: totalXp,
+          level: gameState.level,
+          gold_count: gameState.goldCount,
+          jewel_count: gameState.jewelCount,
+          star_count: gameState.starCount,
+          sword_power: gameState.swordPower,
+          player_health: gameState.playerHealth,
+          max_health: gameState.maxHealth,
+          unlocked_skins: gameState.unlockedSkins,
+          active_skin: gameState.activeSkin,
+        }),
+      }).catch(console.error);
+    }, 1500); // Debounce sync
+
+    return () => clearTimeout(timeoutId);
+  }, [gameState, authUser]);
 
   function handleLoginSuccess(user: AuthUser, token: string) {
     setAuthUser(user);
@@ -501,7 +573,7 @@ export default function App() {
 
         const finalXP = Math.round(xp * xpMultiplier);
         const totalXP = prev.currentXP + finalXP;
-        const xpNeeded = prev.level * 200; // matches backend formula: level = floor(xp/200)+1
+        const xpNeeded = 200; // Each level requires exactly 200 XP
         let finalLvl = prev.level;
         let leftoverXP = totalXP;
 
@@ -1284,6 +1356,8 @@ export default function App() {
             <div className="flex flex-col gap-2.5">
               {[
                 { id: "guild_hall", label: "Guild Hall", icon: Users, color: "#10b981" },
+                { id: "hero_profile", label: "Hero Profile", icon: User, color: "#f59e0b" },
+                { id: "peer_chat", label: "Peer Chat", icon: MessageSquare, color: "#10b981" },
                 { id: "quiz_arena", label: "Quiz Arena", icon: Gamepad2, color: "#3b82f6" },
                 { id: "knowledge_scrolls", label: "Knowledge Scrolls", icon: BookOpen, color: "#ec4899" },
                 { id: "quests", label: "Quest Book", icon: ListTodo, color: "#8b5cf6" },
@@ -1442,8 +1516,52 @@ export default function App() {
                     sendStudyInvitation={sendStudyInvitation}
                     INITIAL_PEERS={INITIAL_PEERS}
                     playSound={playGameSound}
+                    onOpenChat={(peerId) => {
+                      setActivePeerId(peerId);
+                      setActiveTab("peer_chat");
+                      playGameSound("click");
+                    }}
                   />
                 )}
+{activeTab === "hero_profile" && (
+                  <ProfileDashboard
+                    gameState={gameState}
+                    setGameState={setGameState}
+                    AVATAR_SKINS={AVATAR_SKINS}
+                    nickname={nickname}
+                    setNickname={setNickname}
+                    college={college}
+                    setCollege={setCollege}
+                    email={email}
+                    setEmail={setEmail}
+                    knownSkills={knownSkills}
+                    setKnownSkills={setKnownSkills}
+                    desiredSkills={desiredSkills}
+                    setDesiredSkills={setDesiredSkills}
+                    avatarEmoji={avatarEmoji}
+                    setAvatarEmoji={setAvatarEmoji}
+                    profileFrame={profileFrame}
+                    setProfileFrame={setProfileFrame}
+                    activeThemeId={activeThemeId}
+                    setActiveThemeId={setActiveThemeId}
+                    playSound={playGameSound}
+                    showToast={showToastMsg}
+                  />
+                )}
+
+                {activeTab === "peer_chat" && (
+                  <PeerChatDashboard
+                    nickname={nickname}
+                    INITIAL_PEERS={INITIAL_PEERS}
+                    activePeerId={activePeerId}
+                    setActivePeerId={setActivePeerId}
+                    peerChatHistories={peerChatHistories}
+                    sendPeerMessage={sendPeerMessage}
+                    peerChatLoading={peerChatLoading}
+                    playSound={playGameSound}
+                  />
+                )}
+
                 {activeTab === "quiz_arena" && (
                   <QuizArena
                     quizSubject={quizSubject}
