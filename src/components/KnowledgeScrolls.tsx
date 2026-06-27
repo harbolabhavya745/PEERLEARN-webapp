@@ -45,10 +45,10 @@ export default function KnowledgeScrolls({
       {/* Title block */}
       <div className="border-b-4 border-dashed border-[#ec4899]/20 pb-4">
         <span className="text-xs text-[#ec4899] font-press tracking-wider uppercase block">
-          MODULE 03: SCROLL ALCHEMY
+          MODULE 03: FLASHCARD GENERATOR
         </span>
         <h2 className="text-2xl md:text-3xl font-press text-[#ec4899] text-retro-shadow-pink uppercase mt-2">
-          Knowledge Scrolls
+          Study Flashcards
         </h2>
       </div>
 
@@ -64,7 +64,7 @@ export default function KnowledgeScrolls({
           <div className="text-left space-y-1">
             <h3 className="text-sm font-press text-white uppercase flex items-center gap-2">
               <BookOpen className="w-5 h-5 text-[#ec4899] animate-pulse" />
-              <span>Scribe Custom Scrolls</span>
+              <span>Generate Flashcards</span>
             </h3>
             <p className="text-sm font-pixel text-zinc-400">
               Provide your topic to summon 6 unique academic memory flashcards powered by Gemini 3.5.
@@ -90,7 +90,7 @@ export default function KnowledgeScrolls({
 
             {/* Topic */}
             <div className="space-y-1.5">
-              <label className="text-[10px] text-[#ec4899] font-press uppercase block">Scroll Theme</label>
+              <label className="text-[10px] text-[#ec4899] font-press uppercase block">Flashcard Topic</label>
               <input
                 type="text"
                 value={scrollsTopic}
@@ -108,15 +108,15 @@ export default function KnowledgeScrolls({
             onClick={fetchAIFlashcards}
             className="w-full bg-[#ec4899] text-black font-press text-xs py-3 border-2 border-white shadow-[0_4px_0_#be185d] hover:bg-[#db2777] disabled:bg-neutral-800 disabled:text-zinc-600 disabled:shadow-none cursor-pointer uppercase flex items-center justify-center gap-2"
           >
-            {isGeneratingScrolls ? "Scribing Scrolls..." : "SCRIBE SCROLLS OF KNOWLEDGE 📖"}
+            {isGeneratingScrolls ? "Generating Flashcards..." : "GENERATE FLASHCARDS 📖"}
           </motion.button>
         </div>
       ) : (
-        /* ACTIVE SCROLL DECK */
+        /* ACTIVE FLASHCARD DECK */
         <div className="space-y-5">
           {/* Deck statistics */}
           <div className="flex justify-between items-center text-xs font-press text-zinc-300 bg-black/40 p-3 border border-[#ec4899]/20">
-            <span>SCROLLS: {activeCardIdx + 1} / {flashcards.length}</span>
+            <span>FLASHCARDS: {activeCardIdx + 1} / {flashcards.length}</span>
             <span className="text-emerald-400">MASTERED: {masteredCards.length} / {flashcards.length}</span>
           </div>
 
@@ -182,7 +182,7 @@ export default function KnowledgeScrolls({
           {/* Action controls below card */}
           <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-black/40 p-4 border border-[#ec4899]/20">
             <span className="text-xs font-pixel text-zinc-400 text-center sm:text-left">
-              Flipped the scroll to study the definition? Hit Master to absorb its power!
+              Flipped the flashcard to study the definition? Hit Master to absorb its power!
             </span>
             <div className="flex gap-2 w-full sm:w-auto justify-end">
               <motion.button
@@ -217,7 +217,7 @@ export default function KnowledgeScrolls({
               onClick={() => { setActiveCardIdx(activeCardIdx - 1); setIsFlipped(false); playSound("click"); }}
               className="bg-[#ec4899] text-black font-press text-[9px] py-2 px-4 border-2 border-white shadow-[0_3px_0_#be185d] disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed cursor-pointer uppercase font-bold"
             >
-              ← Prev Scroll
+              ← Prev Flashcard
             </motion.button>
 
             <button
@@ -234,7 +234,7 @@ export default function KnowledgeScrolls({
               onClick={() => { setActiveCardIdx(activeCardIdx + 1); setIsFlipped(false); playSound("click"); }}
               className="bg-[#ec4899] text-black font-press text-[9px] py-2 px-4 border-2 border-white shadow-[0_3px_0_#be185d] disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed cursor-pointer uppercase font-bold"
             >
-              Next Scroll →
+              Next Flashcard →
             </motion.button>
           </div>
         </div>

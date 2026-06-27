@@ -935,6 +935,30 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
     <!-- NOTION PAGE -->
     <div id="p-notion" class="page" style="padding:24px">
       <div class="topbar-title" style="margin-bottom:20px">Notion Workspace</div>
+      <div class="card mb20">
+        <h3>Todo List</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Add tasks straight to your Todos.</p>
+        <div class="g3 mb12">
+          <input type="text" id="notion-todo-title" placeholder="Task Name">
+          <select id="notion-todo-status"><option value="Not started">Not started</option><option value="In progress">In progress</option><option value="Done">Done</option></select>
+          <input type="date" id="notion-todo-date">
+        </div>
+        <button class="btn btn-green" onclick="window.submitNotionTodo()"><i class="ti ti-check"></i> Add Task</button>
+        <div id="notion-todos-list" class="mt16 flex fc gap8"></div>
+      </div>
+
+      <div class="card mb20">
+        <h3>Event Calendar</h3>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Schedule study sessions on your Calendar.</p>
+        <div class="g3 mb12">
+          <input type="text" id="notion-event-title" placeholder="Event Name">
+          <select id="notion-event-type"><option value="Study Session">Study Session</option><option value="Deadline">Deadline</option></select>
+          <input type="datetime-local" id="notion-event-date">
+        </div>
+        <button class="btn btn-purple" onclick="window.submitNotionEvent()"><i class="ti ti-calendar"></i> Schedule Event</button>
+        <div id="notion-events-list" class="mt16 flex fc gap8"></div>
+      </div>
+
       <div id="notion-connection-banner"></div>
       <div id="notion-content" style="display:none">
       <div class="card mb20">
@@ -950,30 +974,6 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
           <button class="btn btn-accent" onclick="window.createNotionNotePage()" style="flex-shrink:0"><i class="ti ti-plus"></i> Create Note</button>
         </div>
         <div id="notion-notes-list" class="flex fc gap8"></div>
-      </div>
-      
-      <div class="card mb20">
-        <h3>Todo List</h3>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Add tasks straight to your Notion Todos.</p>
-        <div class="g3 mb12">
-          <input type="text" id="notion-todo-title" placeholder="Task Name">
-          <select id="notion-todo-status"><option value="Not started">Not started</option><option value="In progress">In progress</option><option value="Done">Done</option></select>
-          <input type="date" id="notion-todo-date">
-        </div>
-        <button class="btn btn-green" onclick="window.submitNotionTodo()"><i class="ti ti-check"></i> Add Task</button>
-        <div id="notion-todos-list" class="mt16 flex fc gap8"></div>
-      </div>
-
-      <div class="card">
-        <h3>Event Calendar</h3>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:12px">Schedule study sessions on your Notion Calendar.</p>
-        <div class="g3 mb12">
-          <input type="text" id="notion-event-title" placeholder="Event Name">
-          <select id="notion-event-type"><option value="Study Session">Study Session</option><option value="Deadline">Deadline</option></select>
-          <input type="datetime-local" id="notion-event-date">
-        </div>
-        <button class="btn btn-purple" onclick="window.submitNotionEvent()"><i class="ti ti-calendar"></i> Schedule Event</button>
-        <div id="notion-events-list" class="mt16 flex fc gap8"></div>
       </div>
       </div> <!-- end notion-content -->
     </div>
@@ -1085,43 +1085,8 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
       const banner = document.getElementById('notion-connection-banner');
       const content = document.getElementById('notion-content');
       
-      if (!status.connected) {
-        banner.innerHTML = `
-          <div class="card mb20" style="text-align:center;padding:40px 20px">
-            <h2>🔗 Connect Your Notion Workspace</h2>
-            <p style="color:var(--text2);margin:12px 0 8px">PeerLearn will automatically create a <strong>📚 PeerLearn</strong> page in your Notion workspace with organized databases for Todos, Events, and Study Notes.</p>
-            <p style="color:var(--text3);font-size:12px;margin-bottom:24px">💡 When Notion asks you to select pages, just pick <strong>any one page</strong> (e.g. your main workspace page). PeerLearn will set everything up inside it automatically.</p>
-            <button class="btn btn-accent" onclick="window.connectNotion()">Connect Notion</button>
-          </div>
-        `;
-        content.style.display = 'none';
-        return;
-      }
-
-      if (status.connected && (!status.last_synced_at || new Date() - new Date(status.last_synced_at) > 5 * 60 * 1000)) {
-        try {
-          await notionApi.sync();
-          const newStatus = await notionApi.getStatus();
-          Object.assign(status, newStatus);
-        } catch(e) {}
-      }
-
-      banner.innerHTML = `
-        <div class="card mb20 flex aic jb" style="background:rgba(99,102,241,.1);border-color:var(--accent)">
-          <div>
-            <div style="font-weight:600;margin-bottom:4px">✅ Connected to "${status.workspace_name || 'Notion'}"</div>
-            <div style="font-size:12px;color:var(--text2)">Last synced: ${status.last_synced_at ? new Date(status.last_synced_at).toLocaleString() : 'Never'}</div>
-          </div>
-          <div class="flex gap8">
-            <button class="btn btn-ghost btn-sm" onclick="window.syncNotion(this)">Sync Now</button>
-            <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window.disconnectNotion()">Disconnect</button>
-          </div>
-        </div>
-      `;
-      content.style.display = 'block';
-
       const results = await Promise.allSettled([
-        notionApi.getNotes(),
+        status.connected ? notionApi.getNotes() : Promise.resolve({ notes: [] }),
         notionApi.getTodos(),
         notionApi.getEvents()
       ]);
@@ -1129,20 +1094,61 @@ label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block;font-wei
       const todosRes  = results[1].status === 'fulfilled' ? results[1].value : { todos: [], error: results[1].reason };
       const eventsRes = results[2].status === 'fulfilled' ? results[2].value : { events: [], error: results[2].reason };
 
-      document.getElementById('notion-notes-list').innerHTML = (notesRes.notes || []).map(n => `
-        <div class="card-sm">
-          <div class="flex jb aic">
-            <div class="flex aic gap8"><strong style="font-size:14px">${n.title}</strong><span class="badge bg" style="font-size:10px">${n.subject}</span></div>
-            <div class="flex aic gap8">
-              <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer">
-                <input type="checkbox" ${n.is_public ? 'checked' : ''} onchange="window.toggleNotePublic('${n.id}', ${n.is_public})"> Public
-              </label>
-              <button class="btn btn-ghost btn-sm" onclick="window.open('${n.url}', '_blank')"><i class="ti ti-external-link"></i> Open in Notion</button>
-              <button class="btn btn-ghost btn-icon btn-sm" onclick="window.deleteNotionNote('${n.id}')" style="color:var(--red);padding:0"><i class="ti ti-trash"></i></button>
+      if (!status.connected) {
+        banner.innerHTML = `
+          <div class="card mb20" style="text-align:center;padding:40px 20px">
+            <h2>🔗 Connect Your Notion Workspace</h2>
+            <p style="color:var(--text2);margin:12px 0 8px">PeerLearn will automatically create a <strong>📚 PeerLearn</strong> page in your Notion workspace with organized databases for Study Notes.</p>
+            <p style="color:var(--text3);font-size:12px;margin-bottom:24px">💡 When Notion asks you to select pages, just pick <strong>any one page</strong> (e.g. your main workspace page). PeerLearn will set everything up inside it automatically.</p>
+            <button class="btn btn-accent" onclick="window.connectNotion()">Connect Notion</button>
+          </div>
+        `;
+        content.style.display = 'none';
+      } else {
+        if (status.connected && (!status.last_synced_at || new Date() - new Date(status.last_synced_at) > 5 * 60 * 1000)) {
+          try {
+            await notionApi.sync();
+            const newStatus = await notionApi.getStatus();
+            Object.assign(status, newStatus);
+          } catch(e) {}
+        }
+
+        banner.innerHTML = `
+          <div class="card mb20 flex aic jb" style="background:rgba(99,102,241,.1);border-color:var(--accent)">
+            <div>
+              <div style="font-weight:600;margin-bottom:4px">✅ Connected to "${status.workspace_name || 'Notion'}"</div>
+              <div style="font-size:12px;color:var(--text2)">Last synced: ${status.last_synced_at ? new Date(status.last_synced_at).toLocaleString() : 'Never'}</div>
+            </div>
+            <div class="flex gap8">
+              <button class="btn btn-ghost btn-sm" onclick="window.syncNotion(this)">Sync Now</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--red)" onclick="window.disconnectNotion()">Disconnect</button>
             </div>
           </div>
-        </div>
-      `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No notes yet</div>';
+        `;
+        content.style.display = 'block';
+
+        let notesHtml = '';
+        if (notesRes.error) {
+          notesHtml = `<div style="color:var(--red);font-size:12px;text-align:center;padding:12px">${notesRes.error.message || notesRes.error}</div>`;
+        } else {
+          notesHtml = (notesRes.notes || []).map(n => `
+            <div class="card-sm">
+              <div class="flex jb aic">
+                <div class="flex aic gap8"><strong style="font-size:14px">${n.title}</strong><span class="badge bg" style="font-size:10px">${n.subject}</span></div>
+                <div class="flex aic gap8">
+                  <label style="font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px;cursor:pointer">
+                    <input type="checkbox" ${n.is_public ? 'checked' : ''} onchange="window.toggleNotePublic('${n.id}', ${n.is_public})"> Public
+                  </label>
+                  <button class="btn btn-ghost btn-sm" onclick="window.open('${n.url}', '_blank')"><i class="ti ti-external-link"></i> Open in Notion</button>
+                  <button class="btn btn-ghost btn-icon btn-sm" onclick="window.deleteNotionNote('${n.id}')" style="color:var(--red);padding:0"><i class="ti ti-trash"></i></button>
+                </div>
+              </div>
+            </div>
+          `).join('') || '<div style="font-size:11px;color:var(--text3);text-align:center">No notes yet</div>';
+        }
+        
+        document.getElementById('notion-notes-list').innerHTML = notesHtml;
+      }
 
       document.getElementById('notion-todos-list').innerHTML = (todosRes.todos || []).map(t => {
         const isDone = t.status === 'Done';

@@ -30,6 +30,9 @@ export interface NoteBlock {
   color: string; // 'green' | 'pink' | 'blue' | 'purple'
   date: string;
   tags: string[];
+  url?: string;
+  is_public?: boolean;
+  subject?: string;
 }
 
 export interface Quest {
@@ -75,7 +78,9 @@ export interface SkillProfile {
   skillsToLearn: string[];
   status: string;
   isOnline: boolean;
-  xpEarned: number;
+  xpEarned?: number;
+  isSuggestion?: boolean;
+  targetUserId?: string;
 }
 
 export interface AvatarSkin {

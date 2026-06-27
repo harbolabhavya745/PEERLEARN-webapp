@@ -409,11 +409,6 @@ export default function App() {
         .then(res => res.json())
         .then(data => { if (data.notes) setNotes(data.notes); })
         .catch(console.error);
-        
-      authFetch("/api/notion/status")
-        .then(res => res.json())
-        .then(data => setNotionStatus(data))
-        .catch(console.error);
     } else {
       setQuests(SEED_QUESTS);
       setNotes(SEED_NOTES);
@@ -451,10 +446,6 @@ export default function App() {
   const [masteredCards, setMasteredCards] = useState<string[]>([]);
   const [scrollsAlert, setScrollsAlert] = useState<string | null>(null);
 
-  // ── Notion Sync ──────────────────────────────────────────────────────────
-  const [notionStatus, setNotionStatus] = useState<any>(null);
-  const [isSyncingNotion, setIsSyncingNotion] = useState(false);
-  const [notionSyncLogs, setNotionSyncLogs] = useState<string[]>([]);
 
   // ── Mascot chat ──────────────────────────────────────────────────────────
   const [chatMessage, setChatMessage] = useState("");
@@ -595,34 +586,6 @@ export default function App() {
     }
   }, [toast]);
 
-  // Handle Notion OAuth URL hash
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.startsWith('#notion')) {
-      const params = new URLSearchParams(hash.replace('#notion?', ''));
-      const error = params.get('error');
-      const connected = params.get('connected');
-      const details = params.get('details');
-      
-      if (error) {
-        let msg = "Notion Connection Failed!";
-        if (details) msg += ` Details: ${decodeURIComponent(details)}`;
-        else if (error === 'missing_params') msg = "Notion Connection Failed: Missing parameters";
-        
-        console.error("[Notion OAuth Error]", msg); // <-- ADDED LOG
-        showToastMsg(msg, "error");
-      } else if (connected === 'true') {
-        showToastMsg("Successfully connected to Notion! 📝", "success");
-      }
-      
-      // Clear the hash without reloading
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      setActiveTab('scribe_chamber'); // Switch to the Notion tab
-    }
-  }, []);
-
-let globalAudioCtx: any = null;
-
   // ═══════════════════════════════════════════════════════════════════════
   //  SOUND SYNTHESIZER (Web Audio API)
   // ═══════════════════════════════════════════════════════════════════════
@@ -644,17 +607,10 @@ let globalAudioCtx: any = null;
   ) => {
     if (isMuted) return;
     try {
-      if (!globalAudioCtx) {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        if (!AudioCtx) return;
-        globalAudioCtx = new AudioCtx();
-      }
-      if (globalAudioCtx.state === 'suspended') {
-        globalAudioCtx.resume().catch(() => {});
-      }
-      if (globalAudioCtx.state !== 'running') return;
-      
-      const ctx = globalAudioCtx;
+      const AudioCtx =
+        window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
 
       const playTone = (
         freq: number,
@@ -1007,8 +963,10 @@ let globalAudioCtx: any = null;
           method: 'POST',
           body: JSON.stringify({
             title,
-            subject,
-            isPublic
+            content: '',
+            color: 'bg-blue-900',
+            tags: [subject],
+            date: new Date().toISOString().split('T')[0]
           })
         });
         const data = await res.json();
@@ -1048,105 +1006,6 @@ let globalAudioCtx: any = null;
         console.error('Failed to delete note in DB', e);
       }
     }
-  };
-
-  // ═══════════════════════════════════════════════════════════════════════
-  //  NOTION SYNC
-  // ═══════════════════════════════════════════════════════════════════════
-  const connectNotion = async () => {
-    try {
-      const res = await authFetch("/api/notion/oauth");
-      
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        throw new Error("API returned non-JSON response. Is the backend server running?");
-      }
-      
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else if (data.error) {
-        throw new Error(data.error);
-      }
-    } catch (e: any) {
-      console.error("[connectNotion Error]", e);
-      showToastMsg(`Failed to connect Notion: ${e.message}`, "error");
-    }
-  };
-
-  const disconnectNotion = async () => {
-    try {
-      await authFetch("/api/notion/disconnect", { method: "POST" });
-      setNotionStatus({ connected: false });
-      showToastMsg("Notion Disconnected", "info");
-    } catch (e) {
-      console.error(e);
-      showToastMsg("ERROR: Could not disconnect from Notion", "error");
-    }
-  };
-
-  const syncNotionSimulator = async () => {
-    if (notes.length === 0) {
-      showToastMsg("EMPTY NOTES: Write at least 1 note to broadcast!", "error");
-      return;
-    }
-
-    setIsSyncingNotion(true);
-    setNotionSyncLogs([]);
-    playGameSound("cast_spell");
-
-    let useRealSync = false;
-    if (authUser && notionStatus?.connected) {
-      try {
-        const res = await authFetch("/api/notion/sync", { method: "POST" });
-        if (res.ok) useRealSync = true;
-      } catch {}
-    }
-
-    const syncSteps = [
-      `[00:01] ⚡ BROADCASTING PACKETS: Commencing Notion cloud handshake...`,
-      `[00:05] 📡 CONNECTING: Target endpoint https://api.notion.com/v1/pages`,
-      `[00:12] 🔑 CREDENTIALS REVEALED: Reading workspace database schema token...`,
-      `[00:18] 🔄 TRANSMITTING: Synced block packaging initialized (${notes.length} notes)...`,
-      `[00:25] 📤 UPLOADING note schemas onto synchronized Notion database...`,
-      `[00:32] 🛡️ AUTHENTICATION STRIKE: Secure SHA-256 cloud envelope granted.`,
-      `[00:40] 🚀 FINALIZING: Flushing API buffer caches...`,
-      useRealSync
-        ? `[00:45] ✅ SUCCESS: 200 OK. Notion page block pointers linked! (Live Sync)`
-        : `[00:45] ✅ SUCCESS: 200 OK. Notion page block pointers linked!`,
-      `[00:48] 💰 REWARDS DISPATCHED: Daily tasks payout complete.`,
-    ];
-
-    syncSteps.forEach((step, idx) => {
-      setTimeout(() => {
-        setNotionSyncLogs((prev) => [...prev, step]);
-        if (!isMuted) {
-          try {
-            const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-            if (AudioCtx) {
-              const ctx = new AudioCtx();
-              const osc = ctx.createOscillator();
-              const gainNode = ctx.createGain();
-              osc.type = "sine";
-              osc.frequency.setValueAtTime(400 + idx * 60, ctx.currentTime);
-              gainNode.gain.setValueAtTime(0.04, ctx.currentTime);
-              gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
-              osc.connect(gainNode);
-              gainNode.connect(ctx.destination);
-              osc.start();
-              osc.stop(ctx.currentTime + 0.08);
-            }
-          } catch {}
-        }
-
-        if (idx === syncSteps.length - 1) {
-          setIsSyncingNotion(false);
-          awardStats(180, 80, 2);
-          showToastMsg("NOTION SYNCED: Sync channel completed! +180 XP / +80 Gold / +2 Gems", "success");
-          playGameSound("sync");
-        }
-      }, (idx + 1) * 600);
-    });
   };
 
 
@@ -1899,12 +1758,6 @@ let globalAudioCtx: any = null;
                     notes={notes}
                     addNote={addNote}
                     deleteNote={deleteNote}
-                    notionStatus={notionStatus}
-                    connectNotion={connectNotion}
-                    disconnectNotion={disconnectNotion}
-                    syncNotionSimulator={syncNotionSimulator}
-                    isSyncingNotion={isSyncingNotion}
-                    notionSyncLogs={notionSyncLogs}
                     playSound={playGameSound}
                   />
                 )}

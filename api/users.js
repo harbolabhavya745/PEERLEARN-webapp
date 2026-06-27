@@ -246,6 +246,89 @@ return json(res, 200, {
       return json(res, 201, { message: `${skin.name} unlocked! 🎉`, skin });
     }
 
+    // ── QUESTS (/api/users/quests) ──────────────────────────────────
+    if (url === '/api/users/quests') {
+      if (req.method === 'GET') {
+        const { data, error } = await supabaseAdmin
+          .from('quests')
+          .select('*')
+          .eq('author_id', req.user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) return json(res, 500, { error: error.message });
+        return json(res, 200, { 
+          quests: data.map(q => ({
+            id: q.id,
+            type: q.type,
+            title: q.title,
+            description: q.description,
+            xpReward: q.xp_reward,
+            goldReward: q.gold_reward,
+            difficulty: q.difficulty,
+            completed: q.completed,
+            dueDate: q.due_date
+          })) 
+        });
+      }
+
+      if (req.method === 'POST') {
+        const { type, title, description, xpReward, goldReward, difficulty, dueDate } = req.body;
+        const { data, error } = await supabaseAdmin
+          .from('quests')
+          .insert({
+            author_id: req.user.id,
+            type,
+            title,
+            description,
+            xp_reward: xpReward,
+            gold_reward: goldReward,
+            difficulty,
+            due_date: dueDate
+          })
+          .select()
+          .single();
+
+        if (error) return json(res, 500, { error: error.message });
+        return json(res, 201, { quest: {
+          id: data.id,
+          type: data.type,
+          title: data.title,
+          description: data.description,
+          xpReward: data.xp_reward,
+          goldReward: data.gold_reward,
+          difficulty: data.difficulty,
+          completed: data.completed,
+          dueDate: data.due_date
+        }});
+      }
+
+      if (req.method === 'PATCH') {
+        const { id, completed } = req.body;
+        const { data, error } = await supabaseAdmin
+          .from('quests')
+          .update({ completed })
+          .eq('id', id)
+          .eq('author_id', req.user.id)
+          .select()
+          .single();
+          
+        if (error) return json(res, 500, { error: error.message });
+        return json(res, 200, { quest: data });
+      }
+
+      if (req.method === 'DELETE') {
+        const { id } = req.query;
+        const { error } = await supabaseAdmin
+          .from('quests')
+          .delete()
+          .eq('id', id)
+          .eq('author_id', req.user.id);
+
+        if (error) return json(res, 500, { error: error.message });
+        return json(res, 200, { message: 'Quest deleted' });
+      }
+    }
+
     return json(res, 404, { error: 'Route not found' });
 
   } catch (err) {

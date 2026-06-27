@@ -325,11 +325,11 @@ const channel = supabase
 The Notion workflow uses **per-user Notion OAuth**. Each user connects their own Notion workspace via the frontend UI.
 1. The user clicks "Connect Notion", starting an OAuth flow (`/api/notion/oauth`).
 2. After granting access, Notion redirects back with a code (`/api/notion/callback`).
-3. The backend exchanges the code for an access token, finds a parent page, and automatically creates 3 databases (Todos, Events, Notes) in the user's workspace.
-4. Database IDs and the Notion token are stored in the user's `profiles` row in Supabase.
+3. The backend exchanges the code for an access token and saves it in the user's `profiles` row in Supabase. **Database creation is deferred to prevent timeouts.**
+4. The first time the user accesses the Notes section, the backend lazily searches for a valid parent page (polling up to 10 seconds to handle Notion search delays), creates a "📚 PeerLearn" Hub page, and creates a "📝 PeerLearn Notes" database inside it.
 
-**Supabase is the Source of Truth:**
-Unlike the old integration, **data is stored in Supabase tables** (`todos`, `events`, `study_notes`). Whenever a user creates or updates an item in PeerLearn, it is saved to Supabase and simultaneously pushed to their connected Notion workspace.
+**Todos and Events are Supabase-Only:**
+Unlike the old integration, **Todos and Events are purely stored in Supabase tables** (`todos`, `events`) and do NOT use the Notion API. They are always accessible on the frontend regardless of whether Notion is connected. Only `study_notes` are synced to the user's connected Notion workspace.
 
 ### On-Demand Two-Way Sync
 
@@ -481,9 +481,10 @@ Flow:
 | 3 | 🟡 Medium | `window.loadNotionData` uses `Promise.all` — if any of the 3 GET requests fail, the whole page data load silently fails | `public/index.html` | Should use `Promise.allSettled` |
 | 4 | 🟡 Medium | Gemini models in `api/quiz/index.js` are set to `gemini-3.5-flash` and `gemini-3.1-flash-lite`. These model names may not be valid; official names are `gemini-1.5-flash` and `gemini-1.5-flash-8b` | `api/quiz/index.js` | Verify model names |
 | 5 | 🟡 Medium | `api/dashboard.js` queries `from('notes')` for trending topics, but social notes live in the `notes` table. This may conflict if schema naming changes | `api/dashboard.js` | Low risk currently |
-| 6 | 🟢 Low | `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in `.env` are placeholders (`rzp_test_...`) — must be replaced with real test keys | `.env` | Dev task |
-| 7 | 🟢 Low | Streak bonus XP (20 XP) is defined in `XP_REWARDS` but never automatically triggered — it would need a cron job or login hook | `lib/middleware.js` | Feature gap |
-| 8 | 🟢 Low | `api/auth.js` has `console.log` debug statements left in the signup flow (they expose user email to Vercel logs) | `api/auth.js` | Clean up before prod |
+| 6 | 🔴 High | Notion OAuth callback fails with "No accessible pages" because Notion's search API is eventually consistent and sometimes takes >14 seconds to index newly authorized pages. | `api/notion.js` | Fixed (Lazy DB creation) |
+| 7 | 🟢 Low | `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` in `.env` are placeholders (`rzp_test_...`) — must be replaced with real test keys | `.env` | Dev task |
+| 8 | 🟢 Low | Streak bonus XP (20 XP) is defined in `XP_REWARDS` but never automatically triggered — it would need a cron job or login hook | `lib/middleware.js` | Feature gap |
+| 9 | 🟢 Low | `api/auth.js` has `console.log` debug statements left in the signup flow (they expose user email to Vercel logs) | `api/auth.js` | Clean up before prod |
 
 ---
 
@@ -525,7 +526,14 @@ Flow:
   *(Note: The first column must literally be named `Name`, not `Title`)*
 - **Hash-Based Routing for Redirects**: The Notion OAuth callback redirects to `/#notion?connected=true`. The `DOMContentLoaded` listener in `public/index.html` was updated to parse `window.location.hash` and correctly call `showPage` to display the Notion dashboard immediately on load, fixing an issue where the UI wouldn't update after connecting.
 - **Persistent Premium & Notion UI State**: Updated the `updateUIWithUserData()` function in the frontend to permanently hide the "Premium" sidebar item once a user is on a paid plan, and to visually update the "Notion Sync" sidebar icon to a checkmark when Notion is linked. `activatePremium()` was also updated to make a real backend API call saving the plan upgrade to Supabase rather than just a frontend mockup.
+- **Notion OAuth Callback Search Delay**: Found that Notion's `search` API is extremely eventually consistent. When a user authorizes new pages during OAuth, it can take >14s for those pages to appear in `search()`. 
 
+### Notion Architectural Fixes (Late June 2026)
+
+- **Todos & Events Re-architected**: Discovered that Todos and Events routes were crashing because they were incorrectly trying to query Notion. Refactored the `api/notion.js` endpoints to use Supabase CRUD exclusively for Todos and Events.
+- **Frontend Decoupling**: Updated `public/index.html` to separate Todos and Events from the Notion Notes section. Todos and Events are now always visible and functional, even if a user hasn't connected Notion.
+- **Lazy Database Creation (Timeout Fix)**: Completely removed database creation from the OAuth callback (`api/notion.js`) to prevent Vercel 10s timeouts caused by Notion's slow search index. The callback now strictly saves the token and redirects.
+- **Robust Hub Page Generation**: Added `ensureNotesDb()` to `lib/notion.js` which is triggered lazily on the first visit to the Notes tab. It actively polls Notion's search API for up to 10 seconds to find the user's authorized pages, then creates a master "📚 PeerLearn" Hub Page, and nests the "📝 PeerLearn Notes" database inside it.
 
 ---
 

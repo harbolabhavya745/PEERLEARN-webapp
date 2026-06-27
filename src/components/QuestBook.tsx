@@ -48,7 +48,7 @@ export default function QuestBook({
           MODULE 04: OBJECTIVE JOURNAL
         </span>
         <h2 className="text-2xl md:text-3xl font-press text-[#8b5cf6] text-retro-shadow-purple uppercase mt-2">
-          Guild Quest Book
+          Quest Book
         </h2>
       </div>
 
@@ -69,7 +69,7 @@ export default function QuestBook({
                     : "text-[#8b5cf6]/70 hover:text-white"
                 }`}
               >
-                {cat}
+                {cat === "raid" ? "one-time" : cat}
               </button>
             ))}
           </div>
@@ -84,7 +84,7 @@ export default function QuestBook({
             {filteredQuests.length === 0 ? (
               <div className="text-center py-16 space-y-3">
                 <span className="text-5xl opacity-40 inline-block">📭</span>
-                <p className="font-press text-xs text-zinc-500">NO ACTIVE QUEST ENCOUNTERS</p>
+                <p className="font-press text-xs text-zinc-500">NO ACTIVE TASKS</p>
                 <p className="font-pixel text-lg text-zinc-400">All objectives cleared in this tier! Level Up your stat logs.</p>
               </div>
             ) : (
@@ -134,7 +134,7 @@ export default function QuestBook({
                             whileTap={{ scale: 0.9 }}
                             onClick={() => completeQuest(q.id)}
                             className="p-1.5 bg-emerald-500 text-black border border-white shadow-[0_2px_0_#047857] hover:bg-emerald-600 cursor-pointer"
-                            title="Complete Quest"
+                            title="Complete Task"
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </motion.button>
@@ -144,7 +144,7 @@ export default function QuestBook({
                           whileTap={{ scale: 0.9 }}
                           onClick={() => deleteQuest(q.id)}
                           className="p-1.5 bg-zinc-850 border border-zinc-700 text-rose-500 hover:text-rose-400 cursor-pointer"
-                          title="Abandon Quest"
+                          title="Delete Task"
                         >
                           <Trash2 className="w-4 h-4" />
                         </motion.button>
@@ -158,12 +158,12 @@ export default function QuestBook({
           </div>
         </div>
 
-        {/* QUEST CONSTRUCT DESIGNER */}
+        {/* TASK CREATOR */}
         <div className="space-y-4">
           <div className="bg-black/40 border-2 border-[#8b5cf6]/30 p-4 space-y-4">
             <h3 className="text-xs font-press text-[#8b5cf6] uppercase flex items-center gap-1.5">
               <PlusCircle className="w-4 h-4 text-[#8b5cf6]" />
-              <span>Forge Quest</span>
+              <span>Create Task</span>
             </h3>
 
             <p className="text-[11px] font-pixel text-zinc-400 leading-normal">
@@ -172,7 +172,7 @@ export default function QuestBook({
 
             <form onSubmit={handleCreateQuest} className="space-y-3 text-left">
               <div className="space-y-1">
-                <label className="text-[9px] font-press text-zinc-400 uppercase block">Quest Name</label>
+                <label className="text-[9px] font-press text-zinc-400 uppercase block">Task Name</label>
                 <input
                   type="text"
                   required
@@ -195,7 +195,7 @@ export default function QuestBook({
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[9px] font-press text-zinc-400 uppercase block">Quest Level</label>
+                  <label className="text-[9px] font-press text-zinc-400 uppercase block">Type</label>
                   <select
                     value={newType}
                     onChange={(e) => setNewType(e.target.value as "daily" | "weekly" | "raid")}
@@ -203,7 +203,7 @@ export default function QuestBook({
                   >
                     <option value="daily">Daily</option>
                     <option value="weekly">Weekly</option>
-                    <option value="raid">Raid Boss</option>
+                    <option value="raid">One-Time</option>
                   </select>
                 </div>
 
@@ -228,7 +228,7 @@ export default function QuestBook({
                 type="submit"
                 className="w-full bg-[#8b5cf6] text-black font-press text-[10px] py-2 border-2 border-white shadow-[0_3px_0_#6d28d9] hover:bg-[#7c3aed] cursor-pointer uppercase font-bold"
               >
-                CRAFT QUEST ⚡
+                ADD TASK ⚡
               </motion.button>
             </form>
           </div>

@@ -1,0 +1,65 @@
+--- api/notion.js
++++ api/notion.js
+@@ -314,24 +314,21 @@
+ 
+       if (req.method === 'GET') {
+         try {
+-          const childRes = await userNotion.blocks.children.list({ block_id: req.profile.notion_notes_db_id });
+-          const pages = childRes.results.filter(b => b.type === 'child_page').slice(0, 15);
+-          
+-          const notes = await Promise.all(pages.map(async page => {
+-            let content = '';
+-            try {
+-              const blocks = await userNotion.blocks.children.list({ block_id: page.id, page_size: 10 });
+-              content = blocks.results.map(b => b.paragraph?.rich_text?.[0]?.plain_text || '').join('\n').trim();
+-            } catch(e) {}
+-            return {
+-              id: page.id,
+-              title: page.child_page.title,
+-              content,
+-              color: 'bg-blue-900',
+-              tags: ['notion'],
+-              date: new Date().toISOString().split('T')[0]
+-            };
+-          }));
++          const notionRes = await userNotion.databases.query({
++            database_id: req.profile.notion_notes_db_id,
++            sorts: [{ timestamp: 'created_time', direction: 'descending' }]
++          });
++          const notes = notionRes.results.slice(0, 15).map(page => ({
++            id: page.id,
++            url: page.url,
++            title: page.properties['Name']?.title?.[0]?.text?.content || 'Untitled',
++            subject: page.properties['Subject']?.select?.name || 'Other',
++            is_public: page.properties['Public']?.checkbox || false,
++            tags: [],
++            date: new Date(page.created_time).toISOString().split('T')[0]
++          }));
+           return json(res, 200, { notes });
+         } catch (err) { return json(res, 500, { error: err.message }); }
+       }
+ 
+       if (req.method === 'POST') {
+         try {
+-          const { title, content, color, tags, date } = req.body;
++          const { title, subject, isPublic } = req.body;
+           const notionPage = await userNotion.pages.create({
+-            parent: { type: 'page_id', page_id: req.profile.notion_notes_db_id },
++            parent: { database_id: req.profile.notion_notes_db_id },
+             properties: {
+-              title: [{ text: { content: title || 'Untitled Note' } }]
++              'Name': { title: [{ text: { content: title || 'Untitled' } }] },
++              'Subject': { select: { name: subject || 'Other' } },
++              'Public': { checkbox: !!isPublic }
+             },
+             children: [
+-              { object: 'block', type: 'paragraph', paragraph: { rich_text: [{ type: 'text', text: { content: content || '' } }] } }
++              { object: 'block', type: 'heading_2', heading_2: { rich_text: [{ type: 'text', text: { content: title || 'Untitled' } }] } },
++              { object: 'block', type: 'divider', divider: {} },
++              { object: 'block', type: 'paragraph', paragraph: { rich_text: [{ type: 'text', text: { content: 'Start typing your notes here...' } }] } }
+             ]
+           });
+-          return json(res, 201, { note: { id: notionPage.id, title, content, color, tags, date } });
++          return json(res, 201, { note: { id: notionPage.id, url: notionPage.url, title, subject, is_public: !!isPublic, date: new Date().toISOString().split('T')[0] } });
+         } catch (err) { return json(res, 500, { error: err.message }); }
+       }

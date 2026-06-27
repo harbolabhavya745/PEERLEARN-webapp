@@ -105,7 +105,7 @@ export default function AuthScreen({ onLogin }: AuthScreenProps) {
             PeerLearn Arcade
           </h1>
           <p className="font-pixel text-lg text-blue-400 mt-1 uppercase">
-            Enter the Study Guild
+            Enter PeerLearn
           </p>
         </div>
 
@@ -176,7 +176,7 @@ export default function AuthScreen({ onLogin }: AuthScreenProps) {
                       required
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Your Guild Name"
+                      placeholder="Your Nickname"
                       className="w-full bg-zinc-950 text-white font-pixel text-lg p-2.5 border-2 border-zinc-700 focus:border-[#3b82f6] outline-none"
                     />
                   </div>
@@ -219,7 +219,7 @@ export default function AuthScreen({ onLogin }: AuthScreenProps) {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="hero@guild.edu"
+                placeholder="hero@college.edu"
                 className="w-full bg-zinc-950 text-white font-pixel text-lg p-2.5 border-2 border-zinc-700 focus:border-[#3b82f6] outline-none"
               />
             </div>
@@ -248,12 +248,12 @@ export default function AuthScreen({ onLogin }: AuthScreenProps) {
             >
               {loading ? (
                 <span className="animate-pulse">
-                  {mode === "login" ? "ACCESSING GUILD..." : "FORGING ACCOUNT..."}
+                  {mode === "login" ? "LOGGING IN..." : "CREATING ACCOUNT..."}
                 </span>
               ) : mode === "login" ? (
-                "⚔️ ENTER GUILD"
+                "🚀 ENTER PEERLEARN"
               ) : (
-                "🛡️ CREATE CHARACTER"
+                "🛡️ CREATE ACCOUNT"
               )}
             </motion.button>
           </form>

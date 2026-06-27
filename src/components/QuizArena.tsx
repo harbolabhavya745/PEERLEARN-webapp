@@ -110,7 +110,7 @@ export default function QuizArena({
 
             {/* Difficulty */}
             <div className="space-y-1.5">
-              <label className="text-[10px] text-[#3b82f6] font-press uppercase block">Raid Rank</label>
+              <label className="text-[10px] text-[#3b82f6] font-press uppercase block">Difficulty</label>
               <select
                 value={quizDifficulty}
                 onChange={(e) => setQuizDifficulty(e.target.value as Difficulty)}
@@ -131,7 +131,7 @@ export default function QuizArena({
             onClick={fetchAIQuiz}
             className="w-full bg-[#3b82f6] text-black font-press text-xs py-3 border-2 border-white shadow-[0_4px_0_#1d4ed8] hover:bg-[#2563eb] disabled:bg-neutral-800 disabled:text-zinc-600 disabled:shadow-none cursor-pointer uppercase flex items-center justify-center gap-2"
           >
-            {isGeneratingQuiz ? "Summoning AI Raid Boss..." : "SUMMON RAID BOSS ⚡"}
+            {isGeneratingQuiz ? "Generating Challenge..." : "START CHALLENGE ⚡"}
           </motion.button>
         </div>
       ) : (
@@ -140,7 +140,7 @@ export default function QuizArena({
           {/* Header Progress indicator */}
           <div className="flex justify-between items-center border-b border-[#3b82f6]/20 pb-3">
             <span className="text-xs font-press text-white uppercase">
-              Raid Battle: {currentQuizIdx + 1} / {quizQuestions.length}
+              Question: {currentQuizIdx + 1} / {quizQuestions.length}
             </span>
             <span className="text-xs font-press text-amber-400">
               SCORE: {quizScore} / {quizQuestions.length}
@@ -251,11 +251,11 @@ export default function QuizArena({
             /* CONQUERED SCREEN */
             <div className="p-8 text-center space-y-5">
               <span className="text-6xl animate-pulse inline-block">🏆</span>
-              <h3 className="text-xl font-press text-amber-400 uppercase">Raid Battle Completed!</h3>
+              <h3 className="text-xl font-press text-amber-400 uppercase">Challenge Completed!</h3>
               
               <div className="max-w-md mx-auto p-4 bg-[#172554]/50 border-2 border-[#3b82f6]/30 text-left space-y-2">
                 <p className="font-pixel text-xl text-zinc-300">
-                  RAID TARGET: <strong className="text-white uppercase">{quizSubject} ({quizTopic})</strong>
+                  TOPIC: <strong className="text-white uppercase">{quizSubject} ({quizTopic})</strong>
                 </p>
                 <p className="font-pixel text-xl text-zinc-300">
                   FINAL HIT ACCURACY: <strong className="text-white">{quizScore} / {quizQuestions.length} ({Math.round((quizScore / quizQuestions.length) * 100)}%)</strong>
@@ -271,7 +271,7 @@ export default function QuizArena({
                 onClick={() => { fetchAIQuiz(); }}
                 className="bg-[#3b82f6] text-black font-press text-xs py-2.5 px-6 border-2 border-white shadow-[0_3px_0_#1d4ed8] hover:bg-[#2563eb] cursor-pointer uppercase font-bold"
               >
-                Summon Another Raid Boss ⚡
+                Start Another Challenge ⚡
               </motion.button>
             </div>
           )}

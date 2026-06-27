@@ -76,15 +76,15 @@ export default function PeerChatDashboard({
       <div className="border-b-4 border-dashed border-[#10b981]/20 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <span className="text-xs text-[#10b981] font-press tracking-wider uppercase block">
-            MODULE 07: CO-OP COMMUNICATIONS
+            MODULE 07: MESSAGING
           </span>
           <h2 className="text-2xl md:text-3xl font-press text-[#10b981] text-retro-shadow-green uppercase mt-2">
-            Peer Connections Console
+            Chat Dashboard
           </h2>
         </div>
         <div className="flex items-center gap-2 bg-[#022c22] border border-[#10b981]/30 p-2 font-pixel text-xs text-[#10b981]">
           <Globe className="w-4 h-4 animate-spin text-emerald-400" />
-          <span className="font-press text-[9px] uppercase">CO-OP CHANNEL STABLE</span>
+          <span className="font-press text-[9px] uppercase">CHAT SERVER ONLINE</span>
         </div>
       </div>
 
@@ -95,7 +95,7 @@ export default function PeerChatDashboard({
           <div className="pixel-box-green p-4 space-y-3.5 flex flex-col h-full">
             <div className="flex items-center justify-between border-b border-[#10b981]/20 pb-2">
               <span className="text-[10px] text-white font-press uppercase flex items-center gap-1.5 font-bold">
-                <Users className="w-4 h-4 text-[#10b981]" /> Study Guild Peers
+                <Users className="w-4 h-4 text-[#10b981]" /> Study Network
               </span>
               <span className="text-[9px] font-pixel text-emerald-400 bg-black/40 px-1 border border-[#10b981]/30">
                 {INITIAL_PEERS.filter(p => p.isOnline).length} ACTIVE
@@ -107,7 +107,7 @@ export default function PeerChatDashboard({
               <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-zinc-500" />
               <input
                 type="text"
-                placeholder="Search guild party..."
+                placeholder="Search network..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-black text-[#10b981] font-pixel text-xs pl-9 p-2 border-2 border-[#10b981]/30 focus:border-[#10b981] focus:outline-none placeholder-zinc-600"
@@ -242,7 +242,7 @@ export default function PeerChatDashboard({
                       <span className="text-[9px] font-press text-zinc-500 mb-0.5">{activePeer.name}</span>
                       <div className="bg-zinc-900 border border-zinc-800 text-zinc-400 rounded-md rounded-tl-none p-3 text-xs font-pixel">
                         <span className="font-press text-[9px] text-[#10b981] tracking-widest uppercase animate-pulse flex items-center gap-2">
-                          <Sparkles className="w-3 h-3 text-amber-400 animate-spin" /> Casting Scroll Message...
+                          <Sparkles className="w-3 h-3 text-amber-400 animate-spin" /> Sending message...
                         </span>
                       </div>
                     </div>
@@ -289,7 +289,7 @@ export default function PeerChatDashboard({
                     value={localMsg}
                     disabled={isActiveLoading}
                     onChange={(e) => setLocalMsg(e.target.value)}
-                    placeholder={`Transmit 8-bit connection scroll to ${activePeer.name}...`}
+                    placeholder={`Send message to ${activePeer.name}...`}
                     className="w-full bg-black text-[#10b981] font-pixel text-sm p-3 border-2 border-[#10b981]/30 focus:border-[#10b981] focus:outline-none placeholder-zinc-700 disabled:opacity-60"
                     maxLength={200}
                   />
@@ -306,7 +306,7 @@ export default function PeerChatDashboard({
             ) : (
               <div className="flex-grow flex flex-col items-center justify-center text-zinc-500 font-pixel">
                 <Compass className="w-12 h-12 text-[#10b981]/20 animate-pulse mb-3" />
-                <p className="uppercase text-sm tracking-widest">Awaiting Scroll Signal</p>
+                <p className="uppercase text-sm tracking-widest">Awaiting Selection</p>
                 <p className="text-xs text-zinc-600 uppercase mt-1">Select a study peer from the party log to begin communication.</p>
               </div>
             )}

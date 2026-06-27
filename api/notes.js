@@ -177,5 +177,6 @@ export default async function handler(req, res) {
     }
   }
 
+
   return json(res, 404, { error: 'Notes route not found' });
 }

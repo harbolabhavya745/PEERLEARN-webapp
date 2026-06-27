@@ -42,10 +42,10 @@ export default function GuildHall({
       {/* Title block */}
       <div className="border-b-4 border-dashed border-[#10b981]/20 pb-4">
         <span className="text-xs text-[#10b981] font-press tracking-wider uppercase block">
-          MODULE 01: GUILD HQ
+          MODULE 01: DASHBOARD
         </span>
         <h2 className="text-2xl md:text-3xl font-press text-[#10b981] text-retro-shadow-green uppercase mt-2">
-          Guild Hall Tavern
+          Dashboard
         </h2>
       </div>
 
@@ -130,7 +130,7 @@ export default function GuildHall({
           <div className="flex items-center gap-2 border-b border-[#10b981]/20 pb-2 justify-between">
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-[#10b981]" />
-              <h3 className="text-sm font-press text-white uppercase">GUILD ACTIVE PARTY</h3>
+              <h3 className="text-sm font-press text-white uppercase">ACTIVE NETWORK</h3>
             </div>
             <span className="text-[10px] font-pixel text-[#10b981] animate-pulse">
               ● {INITIAL_PEERS.filter((p) => p.isOnline).length} ONLINE
@@ -138,7 +138,7 @@ export default function GuildHall({
           </div>
 
           <span className="text-xs font-press text-[#10b981]/70 block uppercase leading-tight">
-            Invite study peers to merge cognitive stacks or transmit direct scrolls:
+            Invite study peers to collaborate or chat directly:
           </span>
 
           <div className="space-y-3 overflow-y-auto pr-1 pixel-scrollbar flex-grow max-h-[300px]">

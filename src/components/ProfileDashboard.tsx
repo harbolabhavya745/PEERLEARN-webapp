@@ -481,7 +481,7 @@ export default function ProfileDashboard({
                       color: currentThemeObj.primaryColor,
                       borderColor: currentThemeObj.primaryColor + "4d"
                     }}
-                    placeholder="squire@pixelguild.edu"
+                    placeholder="student@college.edu"
                   />
                 </div>
               </div>
