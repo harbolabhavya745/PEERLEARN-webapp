@@ -1,4 +1,0 @@
-window.CONFIG = {
-  SUPABASE_URL: 'https://gornehhkjickglfnobvl.supabase.co',
-  SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdvcm5laGhramlja2dsZm5vYnZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTIxMjMsImV4cCI6MjA5NDUyODEyM30.J5pyX0PBWUwys5xw8xGhyX5ywiPl837sB1lDCJ3vpUw'
-};

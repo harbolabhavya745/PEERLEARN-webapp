@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "motion/react";
-import { Users, MessageSquare } from "lucide-react";
+import { Users, MessageSquare, Heart, Shield, Coins, Gem } from "lucide-react";
 import { GameState, AvatarSkin, SkillProfile } from "../types";
 
 interface GuildHallProps {
   gameState: GameState;
   nickname: string;
+  setNickname: (n: string) => void;
+  avatarEmoji: string;
   activeSkinObj: AvatarSkin;
   handleTavernRest: () => void;
   sendStudyInvitation: (peerName: string) => void;
@@ -17,6 +19,8 @@ interface GuildHallProps {
 export default function GuildHall({
   gameState,
   nickname,
+  setNickname,
+  avatarEmoji,
   activeSkinObj,
   handleTavernRest,
   sendStudyInvitation,
@@ -24,9 +28,147 @@ export default function GuildHall({
   playSound,
   onOpenChat
 }: GuildHallProps) {
+  const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [tempNickname, setTempNickname] = useState("");
+
+  const saveHeroNickname = () => {
+    if (tempNickname.trim()) {
+      setNickname(tempNickname.trim());
+      playSound("coin");
+    }
+    setIsEditingNickname(false);
+  };
+
   return (
     <div className="space-y-6">
-      {/* Title block */}
+
+      {/* ======================================================== */}
+      {/* INTEGRATED HUD — logo + nickname + stats, all in one     */}
+      {/* ======================================================== */}
+      <div className="border-4 border-[#3b82f6] shadow-[0_5px_0_#1d4ed8] bg-black p-4 flex flex-col lg:flex-row justify-between items-center gap-4 animate-fade-in">
+
+        {/* Logo & Nickname */}
+        <div className="flex items-center gap-3.5 text-left w-full lg:w-auto">
+          <div className="w-12 h-12 bg-blue-950 border-2 border-[#3b82f6] flex items-center justify-center text-2xl shrink-0 select-none">
+            {avatarEmoji}
+          </div>
+          <div>
+            <h1 className="text-sm md:text-base font-press text-white text-retro-shadow-blue uppercase tracking-tight flex items-center gap-1.5 leading-none">
+              <span>PeerLearn Arcade</span>
+              <span className="text-amber-400 font-pixel text-xl bg-blue-950 px-1 border border-blue-500">v1.4</span>
+            </h1>
+            <div className="flex items-center gap-2 mt-1.5">
+              <span className="text-xs text-[#3b82f6] font-press font-bold uppercase shrink-0">HERO IGN:</span>
+              {isEditingNickname ? (
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="text"
+                    value={tempNickname}
+                    onChange={(e) => setTempNickname(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveHeroNickname();
+                      if (e.key === "Escape") setIsEditingNickname(false);
+                    }}
+                    className="bg-black text-[#3b82f6] font-pixel text-lg px-2 py-0.5 border-2 border-[#3b82f6] focus:outline-none w-36 uppercase"
+                    maxLength={16}
+                    autoFocus
+                  />
+                  <button
+                    onClick={saveHeroNickname}
+                    className="bg-[#3b82f6] text-black font-press text-[9px] px-2 py-1 border-2 border-white hover:bg-[#2563eb] cursor-pointer uppercase"
+                  >
+                    OK
+                  </button>
+                  <button
+                    onClick={() => setIsEditingNickname(false)}
+                    className="text-zinc-500 font-press text-[9px] px-2 py-1 border-2 border-zinc-700 hover:border-zinc-500 cursor-pointer uppercase"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-lg font-pixel text-white bg-[#172554] px-2 py-0.5 border border-[#3b82f6]/30 uppercase font-bold tracking-wider">
+                    {nickname}
+                  </span>
+                  <button
+                    onClick={() => { setTempNickname(nickname); setIsEditingNickname(true); playSound("click"); }}
+                    className="text-[9px] font-press text-[#3b82f6] hover:text-white border border-[#3b82f6]/40 hover:border-[#3b82f6] px-1.5 py-0.5 cursor-pointer uppercase"
+                    title="Edit hero name"
+                  >
+                    ✏️
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* HUD Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 w-full lg:w-auto select-none">
+
+          {/* Health */}
+          <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
+            <span className="text-[9px] font-press text-rose-500 uppercase flex items-center gap-0.5 font-bold">
+              <Heart className="w-3 h-3 shrink-0 animate-bounce text-rose-500" />
+              <span>HEALTH HP</span>
+            </span>
+            <span className="text-xl font-pixel text-white font-bold">
+              {gameState.playerHealth} / {gameState.maxHealth}
+            </span>
+            <div className="w-full bg-zinc-900 h-1.5 mt-1 border border-zinc-800 overflow-hidden">
+              <div
+                className="bg-rose-500 h-full transition-all duration-300"
+                style={{ width: `${(gameState.playerHealth / gameState.maxHealth) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Level & XP */}
+          <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
+            <span className="text-[9px] font-press text-emerald-400 uppercase flex items-center gap-0.5 font-bold">
+              <Shield className="w-3 h-3 shrink-0" />
+              <span>LEVEL {gameState.level}</span>
+            </span>
+            <span className="text-xl font-pixel text-white font-bold">
+              {gameState.currentXP} / {gameState.level * 100} XP
+            </span>
+            <div className="w-full bg-zinc-900 h-1.5 mt-1 border border-zinc-800 overflow-hidden">
+              <div
+                className="bg-emerald-500 h-full transition-all duration-300"
+                style={{ width: `${(gameState.currentXP / (gameState.level * 100)) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Gold */}
+          <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
+            <span className="text-[9px] font-press text-yellow-400 uppercase flex items-center gap-0.5 font-bold">
+              <Coins className="w-3 h-3 shrink-0" />
+              <span>GOLD COINS</span>
+            </span>
+            <span className="text-xl font-pixel text-amber-300 font-bold">
+              💰 {gameState.goldCount}G
+            </span>
+            <span className="text-[9px] font-pixel text-zinc-500 mt-1 uppercase">[Ready to Trade]</span>
+          </div>
+
+          {/* Crystals */}
+          <div className="bg-black border-2 border-zinc-800 p-2 flex flex-col justify-between items-start">
+            <span className="text-[9px] font-press text-cyan-400 uppercase flex items-center gap-0.5 font-bold">
+              <Gem className="w-3 h-3 shrink-0" />
+              <span>CRYSTALS</span>
+            </span>
+            <span className="text-xl font-pixel text-cyan-300 font-bold">
+              💎 {gameState.jewelCount} / {gameState.starCount}★
+            </span>
+            <span className="text-[9px] font-pixel text-zinc-500 mt-1 uppercase">[Relic Vaults]</span>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Module title */}
       <div className="border-b-4 border-dashed border-[#10b981]/20 pb-4">
         <span className="text-xs text-[#10b981] font-press tracking-wider uppercase block">
           MODULE 01: DASHBOARD
