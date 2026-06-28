@@ -368,9 +368,27 @@ export default function ProfileDashboard({
                           EQUIP
                         </button>
                       ) : (
-                        <span className="text-zinc-600 font-press text-[9px] uppercase border border-zinc-800 px-2 py-1">
-                          🔒 {skin.cost}g
-                        </span>
+                        <button
+                          onClick={() => {
+                            if (gameState.goldCount < skin.cost) {
+                              showToast(`Need ${skin.cost}G to unlock ${skin.name}!`, "error");
+                              playSound("danger");
+                              return;
+                            }
+                            setGameState(prev => ({
+                              ...prev,
+                              goldCount: prev.goldCount - skin.cost,
+                              unlockedSkins: [...prev.unlockedSkins, skin.id],
+                              activeSkin: skin.id
+                            }));
+                            setAvatarEmoji(skin.spriteUrl);
+                            showToast(`Unlocked & equipped: ${skin.name}!`, "success");
+                            playSound("coin");
+                          }}
+                          className="font-press text-[9px] text-white px-2.5 py-1 border border-amber-500/60 bg-amber-500/10 hover:bg-amber-500/20 cursor-pointer transition-colors uppercase font-bold"
+                        >
+                          💰 {skin.cost}G
+                        </button>
                       )}
                     </div>
                   </div>

@@ -73,7 +73,7 @@ export default function PeerChatDashboard({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0 overflow-hidden">
       {/* Title block */}
       <div className="border-b-4 border-dashed border-[#10b981]/20 pb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
         <div>
@@ -193,7 +193,7 @@ export default function PeerChatDashboard({
         <div className="col-span-1 lg:col-span-8 flex flex-col min-h-0">
           <div className="pixel-box-green p-5 flex flex-col flex-1 min-h-0">
             {activePeer ? (
-              <div className="flex flex-col h-full flex-grow space-y-4">
+              <div className="flex flex-col h-full flex-grow space-y-4 overflow-hidden">
                 
                 {/* Active Chat Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#10b981]/20 pb-3.5 gap-2.5">
