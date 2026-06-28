@@ -17,24 +17,26 @@ import { SkillProfile } from "../types";
 
 interface PeerChatDashboardProps {
   nickname: string;
-  INITIAL_PEERS: SkillProfile[];
+  peers: SkillProfile[];
   activePeerId: string | null;
   setActivePeerId: (id: string | null) => void;
   peerChatHistories: Record<string, { role: "user" | "model"; text: string }[]>;
   sendPeerMessage: (peerId: string, text: string) => Promise<void>;
   peerChatLoading: Record<string, boolean>;
   playSound: (type: "click" | "coin" | "levelup" | "correct" | "wrong" | "quest_complete" | "heal" | "sync" | "cast_spell" | "danger" | "chat_send" | "chat_reply") => void;
+  onOpenProfile: (userId: string) => void;
 }
 
 export default function PeerChatDashboard({
   nickname,
-  INITIAL_PEERS,
+  peers,
   activePeerId,
   setActivePeerId,
   peerChatHistories,
   sendPeerMessage,
   peerChatLoading,
-  playSound
+  playSound,
+  onOpenProfile
 }: PeerChatDashboardProps) {
   const [localMsg, setLocalMsg] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,10 +44,10 @@ export default function PeerChatDashboard({
 
   // Set default active peer if none selected
   useEffect(() => {
-    if (!activePeerId && INITIAL_PEERS.length > 0) {
-      setActivePeerId(INITIAL_PEERS[0].id);
+    if (!activePeerId && peers.length > 0) {
+      setActivePeerId(peers[0].id);
     }
-  }, [activePeerId, INITIAL_PEERS, setActivePeerId]);
+  }, [activePeerId, peers, setActivePeerId]);
 
   // Scroll to bottom when message arrives
   useEffect(() => {
@@ -54,12 +56,12 @@ export default function PeerChatDashboard({
     }
   }, [activePeerId, peerChatHistories, peerChatLoading]);
 
-  const filteredPeers = INITIAL_PEERS.filter(peer => 
+  const filteredPeers = peers.filter(peer => 
     peer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     peer.status.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const activePeer = INITIAL_PEERS.find(p => p.id === activePeerId) || INITIAL_PEERS[0];
+  const activePeer = peers.find(p => p.id === activePeerId) || peers[0];
   const activeChat = activePeerId ? (peerChatHistories[activePeerId] || []) : [];
   const isActiveLoading = activePeerId ? !!peerChatLoading[activePeerId] : false;
 
@@ -95,7 +97,7 @@ export default function PeerChatDashboard({
                 <Users className="w-4 h-4 text-[#10b981]" /> Study Guild Peers
               </span>
               <span className="text-[9px] font-pixel text-emerald-400 bg-black/40 px-1 border border-[#10b981]/30">
-                {INITIAL_PEERS.filter(p => p.isOnline).length} ACTIVE
+                {peers.filter(p => p.isOnline).length} ACTIVE
               </span>
             </div>
 
@@ -130,14 +132,30 @@ export default function PeerChatDashboard({
                         : "bg-black/40 border-zinc-800 hover:border-zinc-700"
                     }`}
                   >
-                    <div className="w-10 h-10 bg-[#022c22] border border-[#10b981]/30 flex items-center justify-center text-xl shrink-0 relative">
+                    <div 
+                      className="w-10 h-10 bg-[#022c22] border border-[#10b981]/30 flex items-center justify-center text-xl shrink-0 relative hover:bg-[#064e3b] transition-colors"
+                      title="View Profile"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenProfile(p.targetUserId || p.id);
+                      }}
+                    >
                       <span>{p.avatarSkin}</span>
                       <span className={`w-2.5 h-2.5 rounded-full absolute -top-0.5 -right-0.5 ${p.isOnline ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"}`} />
                     </div>
                     
                     <div className="truncate flex-grow">
                       <div className="flex justify-between items-center">
-                        <span className="font-press text-[10px] text-white truncate max-w-[120px]">{p.name}</span>
+                        <span 
+                          className="font-press text-[10px] text-white truncate max-w-[120px] hover:text-[#10b981] transition-colors"
+                          title="View Profile"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOpenProfile(p.targetUserId || p.id);
+                          }}
+                        >
+                          {p.name}
+                        </span>
                         <span className="text-[9px] font-pixel text-zinc-400">LV {p.level}</span>
                       </div>
                       <p className="text-[11px] font-pixel text-[#10b981] truncate mt-0.5">
@@ -180,13 +198,23 @@ export default function PeerChatDashboard({
                 {/* Active Chat Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#10b981]/20 pb-3.5 gap-2.5">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-[#022c22] border-2 border-[#10b981] flex items-center justify-center text-2xl shrink-0 relative">
+                    <div 
+                      className="w-12 h-12 bg-[#022c22] border-2 border-[#10b981] flex items-center justify-center text-2xl shrink-0 relative cursor-pointer hover:bg-[#064e3b] transition-colors"
+                      title="View Profile"
+                      onClick={() => onOpenProfile(activePeer.targetUserId || activePeer.id)}
+                    >
                       <span>{activePeer.avatarSkin}</span>
                       <span className={`w-3 h-3 rounded-full absolute -top-1 -right-1 ${activePeer.isOnline ? "bg-emerald-400 animate-pulse" : "bg-zinc-500"}`} />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-press text-sm text-white uppercase">{activePeer.name}</h3>
+                        <h3 
+                          className="font-press text-sm text-white uppercase cursor-pointer hover:text-[#10b981] transition-colors"
+                          title="View Profile"
+                          onClick={() => onOpenProfile(activePeer.targetUserId || activePeer.id)}
+                        >
+                          {activePeer.name}
+                        </h3>
                         <span className="text-[9px] font-pixel text-[#10b981] bg-[#022c22] px-1.5 border border-[#10b981]/30">LV {activePeer.level}</span>
                       </div>
                       <span className="text-xs font-pixel text-zinc-400 block mt-0.5">"{activePeer.status}"</span>

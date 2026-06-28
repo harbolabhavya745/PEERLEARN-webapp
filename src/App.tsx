@@ -48,6 +48,7 @@ import PixelSageMascot from "./components/PixelSageMascot";
 import PeerChatDashboard from "./components/PeerChatDashboard";
 import ProfileDashboard from "./components/ProfileDashboard";
 import AuthScreen from "./components/AuthScreen";
+import UserProfileModal from "./components/UserProfileModal";
 
 // Premium Avatar Skins
 const AVATAR_SKINS: AvatarSkin[] = [
@@ -98,42 +99,6 @@ const AVATAR_SKINS: AvatarSkin[] = [
   },
 ];
 
-// Seed active peers
-const INITIAL_PEERS: SkillProfile[] = [
-  {
-    id: "p1",
-    name: "Ada_Lovelace_8bit",
-    level: 7,
-    avatarSkin: "🧪",
-    skillsToGive: ["Recursion Theory", "Pointers"],
-    skillsToLearn: ["Organic Synthesis", "Derivatives"],
-    status: "Rerolling CS homework. Looking for alchemist partner!",
-    isOnline: true,
-    xpEarned: 1200
-  },
-  {
-    id: "p2",
-    name: "Heisenberg_RPG",
-    level: 12,
-    avatarSkin: "🧙‍♂️",
-    skillsToGive: ["Organic Bonding", "Equilibrium"],
-    skillsToLearn: ["Recursion Theory", "Big-O Analysis"],
-    status: "Active study raid. Ready for chemistry boss!",
-    isOnline: true,
-    xpEarned: 2400
-  },
-  {
-    id: "p3",
-    name: "Newton_Limit_Break",
-    level: 5,
-    avatarSkin: "🛡️",
-    skillsToGive: ["Limits & Tangents", "Kinematics"],
-    skillsToLearn: ["Recursion Theory"],
-    status: "Grinding physics vectors. AFK eating mana potions.",
-    isOnline: false,
-    xpEarned: 600
-  }
-];
 
 // Seed initial Quests
 const SEED_QUESTS: Quest[] = [
@@ -287,6 +252,8 @@ export default function App() {
     return localStorage.getItem("peerlearn_theme_id") || "green";
   });
 
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+
   // Main game state
   const [gameState, setGameState] = useState<GameState>(() => {
     const saved = localStorage.getItem("peerlearn_gamestate");
@@ -408,17 +375,7 @@ export default function App() {
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
-    return {
-      "p1": [
-        { role: "model", text: "BEEP BOOP! Hey there! I'm Ada_Lovelace_8bit. I'm currently hacking away at some recursion theory. Want to join my study party?" }
-      ],
-      "p2": [
-        { role: "model", text: "Yo! Heisenberg_RPG here. I'm cooking up some organic chemistry bonding formulas. Let's merge cognitive stacks!" }
-      ],
-      "p3": [
-        { role: "model", text: "Greetings, traveler. Newton_Limit_Break here. I am grinding physics vectors, but my physical avatar is currently AFK eating mana potions." }
-      ]
-    };
+    return {};
   });
   const [peerChatLoading, setPeerChatLoading] = useState<Record<string, boolean>>({});
 
@@ -480,9 +437,6 @@ export default function App() {
   // ── Fetch Messages for Active Chat ──
   useEffect(() => {
     if (!authUser || !activePeerId) return;
-    
-    // Ignore dummy mock profiles (p1, p2, p3)
-    if (activePeerId.startsWith("p")) return;
 
     async function loadMsgs() {
       setPeerChatLoading(prev => ({ ...prev, [activePeerId as string]: true }));
@@ -513,7 +467,7 @@ export default function App() {
     }));
     setPeerChatLoading(prev => ({ ...prev, [peerId]: true }));
     
-    if (authUser && !peerId.startsWith("p") && !peerId.startsWith("sugg_")) {
+    if (authUser && !peerId.startsWith("sugg_")) {
       try {
         await authFetch("/api/chat/messages", {
           method: "POST",
@@ -570,19 +524,6 @@ export default function App() {
         console.error(e);
         setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
       }
-    } else {
-      // Simulate AI peer typing for dummy profiles
-      setTimeout(() => {
-        const reply = { role: "model" as const, text: "Got it! Let's study." };
-        setPeerChatHistories(prev => ({
-          ...prev,
-          [peerId]: [...(prev[peerId] || []), reply]
-        }));
-        setPeerChatLoading(prev => ({ ...prev, [peerId]: false }));
-        if (typeof window !== 'undefined' && (window as any).playGameSound) {
-          (window as any).playGameSound("chat_reply");
-        }
-      }, 1000);
     }
   };
 
@@ -1602,13 +1543,14 @@ let globalAudioCtx: any = null;
                     activeSkinObj={activeSkinObj}
                     handleTavernRest={handleTavernRest}
                     sendStudyInvitation={sendStudyInvitation}
-                    INITIAL_PEERS={realPeers}
+                    peers={realPeers}
                     playSound={playGameSound}
                     onOpenChat={(peerId) => {
                       setActivePeerId(peerId);
                       setActiveTab("peer_chat");
                       playGameSound("click");
                     }}
+                    onOpenProfile={setSelectedProfileId}
                   />
                 )}
 
@@ -1641,13 +1583,14 @@ let globalAudioCtx: any = null;
                 {activeTab === "peer_chat" && (
                   <PeerChatDashboard
                     nickname={nickname}
-                    INITIAL_PEERS={INITIAL_PEERS}
+                    peers={realPeers}
                     activePeerId={activePeerId}
                     setActivePeerId={setActivePeerId}
                     peerChatHistories={peerChatHistories}
                     sendPeerMessage={sendPeerMessage}
                     peerChatLoading={peerChatLoading}
                     playSound={playGameSound}
+                    onOpenProfile={setSelectedProfileId}
                   />
                 )}
 
@@ -1761,6 +1704,10 @@ let globalAudioCtx: any = null;
         </footer>
 
       </div>
+      <UserProfileModal 
+        userId={selectedProfileId} 
+        onClose={() => setSelectedProfileId(null)} 
+      />
     </div>
   );
 }

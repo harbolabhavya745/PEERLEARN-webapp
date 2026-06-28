@@ -11,9 +11,10 @@ interface GuildHallProps {
   activeSkinObj: AvatarSkin;
   handleTavernRest: () => void;
   sendStudyInvitation: (peerName: string) => void;
-  INITIAL_PEERS: SkillProfile[];
+  peers: SkillProfile[];
   playSound: (type: "click" | "coin" | "levelup" | "correct" | "wrong" | "quest_complete" | "heal" | "sync" | "cast_spell" | "danger" | "chat_send" | "chat_reply") => void;
   onOpenChat: (peerId: string) => void;
+  onOpenProfile: (userId: string) => void;
 }
 
 export default function GuildHall({
@@ -24,9 +25,10 @@ export default function GuildHall({
   activeSkinObj,
   handleTavernRest,
   sendStudyInvitation,
-  INITIAL_PEERS,
+  peers,
   playSound,
-  onOpenChat
+  onOpenChat,
+  onOpenProfile
 }: GuildHallProps) {
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [tempNickname, setTempNickname] = useState("");
@@ -228,7 +230,7 @@ export default function GuildHall({
               <h3 className="text-sm font-press text-white uppercase">Suggested Peers</h3>
             </div>
             <span className="text-[10px] font-pixel text-[#10b981] animate-pulse">
-              ● {INITIAL_PEERS.filter((p) => p.isSuggestion).length} NEW
+              ● {peers.filter((p) => p.isSuggestion).length} NEW
             </span>
           </div>
 
@@ -237,14 +239,14 @@ export default function GuildHall({
           </span>
 
           <div className="space-y-3 overflow-y-auto pr-1 pixel-scrollbar flex-grow max-h-[300px]">
-            {INITIAL_PEERS.filter((p) => p.isSuggestion).length === 0 ? (
+            {peers.filter((p) => p.isSuggestion).length === 0 ? (
               <div className="flex flex-col items-center justify-center py-10 text-zinc-600 font-pixel text-xs uppercase gap-2">
                 <MessageSquare className="w-8 h-8 text-[#10b981]/20" />
                 <p>No new suggestions right now.</p>
                 <p className="text-zinc-700 text-[10px]">Check back later as more peers join!</p>
               </div>
             ) : (
-              INITIAL_PEERS.filter((p) => p.isSuggestion).map((p) => (
+              peers.filter((p) => p.isSuggestion).map((p) => (
                 <div
                   key={p.id}
                   className="p-3 bg-black/40 border-2 border-[#10b981]/15 flex flex-col gap-2"
@@ -252,7 +254,11 @@ export default function GuildHall({
                   {/* Top row: avatar + name + level + buttons */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-[#022c22] border-2 border-[#10b981] flex items-center justify-center text-xl relative shrink-0">
+                      <div 
+                        onClick={() => onOpenProfile(p.targetUserId || p.id)}
+                        className="w-10 h-10 bg-[#022c22] border-2 border-[#10b981] flex items-center justify-center text-xl relative shrink-0 cursor-pointer hover:bg-[#064e3b] transition-colors"
+                        title="View Profile"
+                      >
                         <span>{p.avatarSkin}</span>
                         <span
                           className={`w-2.5 h-2.5 rounded-full absolute -top-1 -right-1 ${
@@ -262,7 +268,11 @@ export default function GuildHall({
                       </div>
                       <div className="text-left">
                         <div className="flex items-center gap-2">
-                          <span className="font-press text-[11px] text-white truncate max-w-[120px]">
+                          <span 
+                            onClick={() => onOpenProfile(p.targetUserId || p.id)}
+                            className="font-press text-[11px] text-white truncate max-w-[120px] cursor-pointer hover:text-[#10b981] transition-colors"
+                            title="View Profile"
+                          >
                             {p.name}
                           </span>
                           <span className="text-[10px] font-pixel text-[#10b981] bg-[#022c22] px-1 border border-[#10b981]/30">
