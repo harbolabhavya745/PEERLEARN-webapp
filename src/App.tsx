@@ -401,7 +401,8 @@ export default function App() {
             skillsToLearn: [],
             status: c.other_user?.bio || "Online", 
             isOnline: true,
-            xpEarned: c.other_user?.xp || 0
+            xpEarned: c.other_user?.xp || 0,
+            targetUserId: c.target_user_id || c.other_user?.id
           }));
         }
 
